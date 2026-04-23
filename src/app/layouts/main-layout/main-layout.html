@@ -1,0 +1,23 @@
+<div class="app-shell">
+  <header class="shell-header">
+    <a class="brand" routerLink="/">
+      <span class="brand-mark">CS</span>
+      <span>
+        <strong>CodeSync</strong>
+        <small>Frontend Workspace</small>
+      </span>
+    </a>
+
+    <nav class="shell-nav" aria-label="Primary navigation">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Home
+      </a>
+      <a href="javascript:void(0)" aria-disabled="true">Projects</a>
+      <a href="javascript:void(0)" aria-disabled="true">Reviews</a>
+    </nav>
+  </header>
+
+  <main class="shell-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
