@@ -1,59 +1,50 @@
-<div class="page-shell">
-  @if (loading()) {
-    <div class="empty-state">Loading workspace...</div>
-  } @else if (project(); as project) {
-    <section class="glass-card workspace-hero">
-      <div>
-        <p class="eyebrow">Project workspace</p>
-        <h1>{{ project.name }}</h1>
-        <p class="muted">{{ project.description || 'No description provided for this project yet.' }}</p>
+@if (loading()) {
+  <div class="workspace-empty">Loading workspace...</div>
+} @else if (project(); as project) {
+  <section class="workspace-shell">
+    <header class="workspace-topbar">
+      <div class="workspace-breadcrumb">
+        <a routerLink="/dashboard">CodeSync</a>
+        <span>/</span>
+        <strong>{{ project.name }}</strong>
+        @if (selectedFile()) {
+          <span>/</span>
+          <span>{{ selectedFile()?.name }}</span>
+        }
       </div>
 
-      <div class="workspace-hero__overview">
-        <div class="workspace-hero__meta">
-          <span class="tag">{{ project.language || 'Unknown language' }}</span>
-          <span class="tag">{{ project.visibility }}</span>
-          <span class="tag">{{ project.starCount }} stars</span>
-          @if (permissions(); as permission) {
-            <span class="tag">{{ permission.canWrite ? 'Write access' : 'Read only' }}</span>
+      <div class="workspace-topbar__actions">
+        <div class="workspace-avatars">
+          @for (participant of participants().slice(0, 3); track participant.participantId) {
+            <span class="workspace-avatar" [style.background]="participant.color || '#6e5aff'">
+              {{ userLabel(participant.userId).charAt(0) }}
+            </span>
           }
         </div>
 
-        <div class="workspace-hero__stats">
-          <article class="workspace-mini-stat">
-            <strong>{{ project.memberUserIds.length + 1 }}</strong>
-            <span>team members</span>
-          </article>
-          <article class="workspace-mini-stat">
-            <strong>{{ sortedFiles().length }}</strong>
-            <span>files and folders</span>
-          </article>
-          <article class="workspace-mini-stat">
-            <strong>{{ snapshots().length }}</strong>
-            <span>saved snapshots</span>
-          </article>
-        </div>
+        @if (selectedFile() && canWrite()) {
+          <button class="primary-action" type="button" (click)="runCode()">Run</button>
+          <button class="secondary-action" type="button" (click)="activeView.set('history')">Snapshot</button>
+        }
       </div>
-    </section>
+    </header>
 
     @if (error()) {
-      <p class="status-message status-message--error">{{ error() }}</p>
+      <p class="status-message status-message--error workspace-message">{{ error() }}</p>
     }
 
     @if (status()) {
-      <p class="status-message">{{ status() }}</p>
+      <p class="status-message workspace-message">{{ status() }}</p>
     }
 
-    <section class="workspace-grid">
-      <article class="section-card workspace-sidebar">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Files</p>
-            <h2>Project tree</h2>
-          </div>
+    <div class="workspace-layout">
+      <aside class="workspace-explorer">
+        <div class="workspace-panel__header">
+          <span class="eyebrow">Explorer</span>
+          <strong>{{ sortedFiles().length }} items</strong>
         </div>
 
-        <div class="field-grid workspace-actions workspace-actions--compact">
+        <div class="field-grid">
           <div class="field">
             <label for="fileSearch">Search files</label>
             <input
@@ -63,6 +54,7 @@
               placeholder="Search path or filename"
             />
           </div>
+
           <div class="button-row">
             <button class="secondary-action" type="button" (click)="searchFiles()">Search</button>
             <button
@@ -76,12 +68,12 @@
         </div>
 
         @if (displayedFiles().length) {
-          <div class="file-list">
-            @for (file of displayedFiles(); track file.fileId) {
+          <div class="workspace-file-list">
+            @for (file of displayedFiles(); track file.fileId ?? file.path) {
               <button
-                class="file-item"
-                [class.file-item--active]="selectedFile()?.fileId === file.fileId"
-                [class.file-item--folder]="!file.language"
+                class="workspace-file"
+                [class.workspace-file--active]="selectedFile()?.fileId === file.fileId"
+                [class.workspace-file--folder]="!file.language"
                 type="button"
                 (click)="selectFile(file)"
               >
@@ -95,10 +87,10 @@
         }
 
         @if (canWrite()) {
-          <div class="field-grid workspace-actions">
+          <div class="workspace-create">
             <div class="field">
               <label for="newFilePath">New file path</label>
-              <input id="newFilePath" [(ngModel)]="newFilePath" placeholder="src/Main.java" />
+              <input id="newFilePath" [(ngModel)]="newFilePath" placeholder="src/main/java/Main.java" />
             </div>
 
             <div class="field">
@@ -114,362 +106,402 @@
 
             <div class="field">
               <label for="newFolderPath">New folder path</label>
-              <input id="newFolderPath" [(ngModel)]="newFolderPath" placeholder="src/components" />
+              <input id="newFolderPath" [(ngModel)]="newFolderPath" placeholder="src/main/resources" />
             </div>
 
             <button class="secondary-action" type="button" (click)="createFolder()">Create folder</button>
           </div>
         }
-      </article>
+      </aside>
 
-      <article class="section-card workspace-editor">
-        <div class="section-heading">
+      <main class="workspace-main">
+        <div class="workspace-main__header">
           <div>
-            <p class="eyebrow">Editor</p>
-            <h2>{{ selectedFile()?.name || 'Select a file' }}</h2>
+            <strong>{{ selectedFile()?.name || 'Select a file' }}</strong>
+            <small>{{ selectedFile()?.path || 'Choose a source file to begin.' }}</small>
           </div>
 
-          <div class="button-row">
-            @if (selectedFile() && canWrite()) {
-              <button class="primary-action" type="button" (click)="saveFile()">Save</button>
-              <button class="secondary-action" type="button" (click)="runCode()">Run</button>
-            }
+          <div class="workspace-tabs">
+            <button
+              type="button"
+              [class.active]="activeView() === 'editor'"
+              (click)="activeView.set('editor')"
+            >
+              Editor
+            </button>
+            <button
+              type="button"
+              [class.active]="activeView() === 'review'"
+              (click)="activeView.set('review')"
+            >
+              Review
+            </button>
+            <button
+              type="button"
+              [class.active]="activeView() === 'history'"
+              (click)="activeView.set('history')"
+            >
+              Version history
+            </button>
           </div>
         </div>
 
-        @if (selectedFile()) {
-          <div class="field-grid">
-            <div class="field-grid field-grid--two">
-              <div class="field">
-                <label for="renameFile">Rename file</label>
-                <input id="renameFile" [(ngModel)]="renameValue" />
-              </div>
-
-              <div class="field">
-                <label for="moveFile">Move file path</label>
-                <input id="moveFile" [(ngModel)]="movePath" />
-              </div>
-            </div>
-
-            @if (canWrite()) {
-              <div class="button-row">
-                <button class="secondary-action" type="button" (click)="renameSelectedFile()">
-                  Rename
-                </button>
-                <button class="secondary-action" type="button" (click)="moveSelectedFile()">Move</button>
-                <button class="secondary-action" type="button" (click)="restoreSelectedFile()">
-                  Restore
-                </button>
-                <button class="danger-action" type="button" (click)="deleteSelectedFile()">
-                  Delete
-                </button>
-              </div>
-            }
-
-            <div class="field">
-              <label for="editorContent">Code</label>
-              <textarea
-                id="editorContent"
-                class="editor-textarea"
-                [ngModel]="editorContent()"
-                (ngModelChange)="editorContent.set($event)"
-                [readonly]="!canWrite()"
-              ></textarea>
-            </div>
-
-            <div class="field">
-              <label for="stdin">Execution stdin</label>
-              <textarea
-                id="stdin"
-                [(ngModel)]="executionInput"
-                placeholder="Optional stdin passed to execution"
-              ></textarea>
-            </div>
-
-            @if (executionResult(); as result) {
-              <div class="execution-result">
-                <div class="tag">Status: {{ result.status }}</div>
-                <div class="code-surface">{{ result.stdout || 'No stdout output' }}</div>
-                @if (result.stderr) {
-                  <div class="code-surface execution-result__error">{{ result.stderr }}</div>
-                }
-              </div>
-            }
-
-            @if (executions().length) {
-              <div class="execution-history">
-                <div class="section-heading execution-history__heading">
-                  <div>
-                    <p class="eyebrow">Runtime</p>
-                    <h3>Execution history</h3>
-                  </div>
-                </div>
-
-                <div class="timeline-list">
-                  @for (job of executions().slice(0, 5); track job.jobId) {
-                    <article class="timeline-item">
-                      <strong>{{ job.language }} | {{ job.status }}</strong>
-                      <small>{{ job.createdAt | date: 'medium' }}</small>
-                      <small>{{ job.executionTimeMs || 0 }} ms | {{ job.memoryUsedKb || 0 }} KB</small>
-                      @if (job.status === 'QUEUED' || job.status === 'RUNNING') {
-                        <div class="button-row">
-                          <button class="danger-action" type="button" (click)="cancelExecution(job.jobId)">
-                            Cancel
-                          </button>
-                        </div>
-                      }
-                    </article>
-                  }
-                </div>
-              </div>
-            }
-          </div>
+        @if (!selectedFile()) {
+          <div class="workspace-empty">Select a file from the explorer to start editing.</div>
         } @else {
-          <div class="empty-state">Select a file from the project tree to start editing.</div>
-        }
-      </article>
-
-      <div class="workspace-sidepanels">
-        <article class="section-card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Versions</p>
-              <h3>Snapshots</h3>
-            </div>
-          </div>
-
-          @if (selectedFile() && canWrite()) {
-            <div class="field-grid">
-              <div class="field">
-                <label for="snapshotMessage">Snapshot message</label>
-                <input id="snapshotMessage" [(ngModel)]="snapshotMessage" placeholder="Describe this change" />
-              </div>
-
-              <div class="field">
-                <label for="snapshotBranch">Branch</label>
-                <input id="snapshotBranch" [(ngModel)]="snapshotBranch" placeholder="main" />
-              </div>
-
-              <button class="secondary-action" type="button" (click)="createSnapshot()">Create snapshot</button>
-            </div>
-          }
-
-          @if (snapshots().length) {
-            <div class="timeline-list">
-              @for (snapshot of snapshots(); track snapshot.snapshotId) {
-                <article class="timeline-item">
-                  <strong>{{ snapshot.message }}</strong>
-                  <small>{{ snapshot.branch }} | {{ userLabel(snapshot.authorId) }}</small>
-                  <small>{{ snapshot.createdAt | date: 'medium' }}</small>
-                  <div class="button-row">
-                    <button class="secondary-action" type="button" (click)="restoreSnapshot(snapshot.snapshotId)">
-                      Restore
-                    </button>
-                  </div>
-                </article>
-              }
-            </div>
-
-            <div class="field-grid compare-box">
-              @if (latestSnapshot(); as latest) {
-                <div class="latest-snapshot">
-                  <strong>Latest snapshot</strong>
-                  <small>{{ latest.branch }} | {{ latest.createdAt | date: 'medium' }}</small>
-                  <small>{{ latest.tag || 'No tag applied' }}</small>
-                </div>
-              }
-
-              <div class="field">
-                <label for="diffFrom">From snapshot</label>
-                <select id="diffFrom" [(ngModel)]="diffFromSnapshotId">
-                  <option [ngValue]="null">Select</option>
-                  @for (snapshot of snapshots(); track snapshot.snapshotId) {
-                    <option [ngValue]="snapshot.snapshotId">{{ snapshot.message }}</option>
+          @switch (activeView()) {
+            @case ('editor') {
+              <section class="workspace-editor">
+                <div class="workspace-toolbar">
+                  <span class="tag">{{ project.language }}</span>
+                  @if (permissions(); as permission) {
+                    <span class="tag">{{ permission.canWrite ? 'Write access' : 'Read only' }}</span>
                   }
-                </select>
-              </div>
-
-              <div class="field">
-                <label for="diffTo">To snapshot</label>
-                <select id="diffTo" [(ngModel)]="diffToSnapshotId">
-                  <option [ngValue]="null">Select</option>
-                  @for (snapshot of snapshots(); track snapshot.snapshotId) {
-                    <option [ngValue]="snapshot.snapshotId">{{ snapshot.message }}</option>
-                  }
-                </select>
-              </div>
-
-              <button class="secondary-action" type="button" (click)="compareSnapshots()">Compare</button>
-            </div>
-
-            @if (canWrite()) {
-              <div class="field-grid compare-box">
-                <div class="field">
-                  <label for="snapshotTag">Tag latest snapshot</label>
-                  <input id="snapshotTag" [(ngModel)]="snapshotTag" placeholder="release-v1" />
-                </div>
-                <button class="secondary-action" type="button" (click)="tagLatestSnapshot()">
-                  Save tag
-                </button>
-
-                <div class="field">
-                  <label for="branchName">Create branch</label>
-                  <input id="branchName" [(ngModel)]="newBranchName" placeholder="feature/editor-refresh" />
+                  <span class="tag">{{ commentCount() }} comments</span>
                 </div>
 
-                <div class="field">
-                  <label for="branchMessage">Branch message</label>
-                  <input id="branchMessage" [(ngModel)]="newBranchMessage" placeholder="Optional branch note" />
-                </div>
-
-                <button class="secondary-action" type="button" (click)="createBranch()">
-                  Create branch
-                </button>
-              </div>
-            }
-
-            @if (diff(); as diff) {
-              <div class="diff-surface">
-                <div class="tag">{{ diff.addedLines }} added</div>
-                <div class="tag">{{ diff.removedLines }} removed</div>
-                @for (line of diff.lines; track $index) {
-                  <pre class="diff-line" [class.diff-line--add]="line.operation === 'ADD'" [class.diff-line--remove]="line.operation === 'REMOVE'">{{ line.content }}</pre>
-                }
-              </div>
-            }
-          } @else {
-            <div class="empty-state">No snapshots yet for this file.</div>
-          }
-        </article>
-
-        <article class="section-card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Comments</p>
-              <h3>Code review</h3>
-            </div>
-            <span class="tag">{{ commentCount() }} comments</span>
-          </div>
-
-          <div class="button-row comment-filters">
-            <button class="secondary-action" type="button" (click)="commentFilter.set('ALL')">All</button>
-            <button class="secondary-action" type="button" (click)="commentFilter.set('OPEN')">Open</button>
-            <button class="secondary-action" type="button" (click)="commentFilter.set('RESOLVED')">
-              Resolved
-            </button>
-          </div>
-
-          @if (selectedFile() && canWrite()) {
-            <div class="field-grid">
-              <div class="field">
-                <label for="commentLine">Line number</label>
-                <input id="commentLine" type="number" min="1" [(ngModel)]="commentLineNumber" />
-              </div>
-
-              <div class="field">
-                <label for="commentContent">Comment</label>
-                <textarea id="commentContent" [(ngModel)]="commentContent"></textarea>
-              </div>
-
-              <button class="secondary-action" type="button" (click)="addComment()">
-                {{ commentReplyParentId ? 'Reply to comment' : 'Add comment' }}
-              </button>
-            </div>
-          }
-
-          @if (rootComments().length) {
-            <div class="timeline-list">
-              @for (comment of rootComments(); track comment.commentId) {
-                <article class="timeline-item">
-                  <strong>{{ userLabel(comment.authorId) }}</strong>
-                  <small>Line {{ comment.lineNumber }} | {{ comment.createdAt | date: 'medium' }}</small>
-                  @if (editingCommentId() === comment.commentId) {
+                @if (canWrite()) {
+                  <div class="workspace-rename">
                     <div class="field">
-                      <textarea [(ngModel)]="editingCommentContent"></textarea>
+                      <label for="renameFile">Rename file</label>
+                      <input id="renameFile" [(ngModel)]="renameValue" />
+                    </div>
+                    <div class="field">
+                      <label for="moveFile">Move path</label>
+                      <input id="moveFile" [(ngModel)]="movePath" />
+                    </div>
+                    <div class="button-row">
+                      <button class="secondary-action" type="button" (click)="renameSelectedFile()">Rename</button>
+                      <button class="secondary-action" type="button" (click)="moveSelectedFile()">Move</button>
+                      <button class="secondary-action" type="button" (click)="restoreSelectedFile()">Restore</button>
+                      <button class="danger-action" type="button" (click)="deleteSelectedFile()">Delete</button>
+                    </div>
+                  </div>
+                }
+
+                <div class="workspace-editor__surface">
+                  <textarea
+                    class="workspace-code"
+                    [ngModel]="editorContent()"
+                    (ngModelChange)="editorContent.set($event)"
+                    [readonly]="!canWrite()"
+                  ></textarea>
+                </div>
+
+                <div class="workspace-output">
+                  <div class="workspace-output__header">
+                    <strong>Output</strong>
+                    @if (executionResult()) {
+                      <span class="tag">{{ executionResult()?.status }}</span>
+                    }
+                  </div>
+
+                  <div class="field">
+                    <label for="stdin">Execution stdin</label>
+                    <textarea id="stdin" [(ngModel)]="executionInput" placeholder="Optional input"></textarea>
+                  </div>
+
+                  @if (executionResult(); as result) {
+                    <div class="code-surface">{{ result.stdout || 'No stdout output' }}</div>
+                    @if (result.stderr) {
+                      <div class="code-surface workspace-output__error">{{ result.stderr }}</div>
+                    }
+                  } @else {
+                    <div class="empty-state">Run the selected file to view execution output.</div>
+                  }
+
+                  @if (executions().length) {
+                    <div class="workspace-job-list">
+                      @for (job of executions().slice(0, 4); track job.jobId) {
+                        <article class="workspace-job">
+                          <strong>{{ job.language }} | {{ job.status }}</strong>
+                          <small>{{ job.createdAt | date: 'short' }}</small>
+                          @if (job.status === 'QUEUED' || job.status === 'RUNNING') {
+                            <button class="danger-action" type="button" (click)="cancelExecution(job.jobId)">
+                              Cancel
+                            </button>
+                          }
+                        </article>
+                      }
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
+            @case ('history') {
+              <section class="workspace-history">
+                <div class="workspace-history__sidebar">
+                  <div class="section-heading">
+                    <div>
+                      <p class="eyebrow">Snapshots</p>
+                      <h3>{{ snapshots().length }} total</h3>
+                    </div>
+                  </div>
+
+                  @if (canWrite()) {
+                    <div class="field-grid">
+                      <div class="field">
+                        <label for="snapshotMessage">Snapshot message</label>
+                        <input id="snapshotMessage" [(ngModel)]="snapshotMessage" />
+                      </div>
+                      <div class="field">
+                        <label for="snapshotBranch">Branch</label>
+                        <input id="snapshotBranch" [(ngModel)]="snapshotBranch" />
+                      </div>
+                      <button class="primary-action" type="button" (click)="createSnapshot()">Add snapshot</button>
+                    </div>
+                  }
+
+                  @if (snapshots().length) {
+                    <div class="workspace-snapshot-list">
+                      @for (snapshot of snapshots(); track snapshot.snapshotId) {
+                        <article class="workspace-snapshot">
+                          <strong>{{ snapshot.message }}</strong>
+                          <small>{{ userLabel(snapshot.authorId) }}</small>
+                          <small>{{ snapshot.createdAt | date: 'short' }}</small>
+                          <div class="button-row">
+                            <button class="secondary-action" type="button" (click)="restoreSnapshot(snapshot.snapshotId)">
+                              Restore
+                            </button>
+                          </div>
+                        </article>
+                      }
                     </div>
                   } @else {
-                    <p>{{ comment.content }}</p>
+                    <div class="empty-state">No snapshots yet for this file.</div>
                   }
-                  <div class="button-row">
-                    <button class="secondary-action" type="button" (click)="beginReply(comment.commentId)">
-                      Reply
-                    </button>
-                    <button class="secondary-action" type="button" (click)="beginCommentEdit(comment)">
-                      Edit
-                    </button>
-                    <button class="danger-action" type="button" (click)="deleteComment(comment.commentId)">
-                      Delete
-                    </button>
-                    @if (canWrite()) {
-                      <button class="secondary-action" type="button" (click)="toggleCommentResolution(comment)">
-                        {{ comment.resolved ? 'Reopen' : 'Resolve' }}
-                      </button>
-                    }
-                    @if (editingCommentId() === comment.commentId) {
-                      <button class="primary-action" type="button" (click)="saveCommentEdit(comment.commentId)">
-                        Save edit
-                      </button>
-                    }
+                </div>
+
+                <div class="workspace-history__viewer">
+                  <div class="workspace-history__controls">
+                    <div class="field">
+                      <label for="diffFrom">Compare from</label>
+                      <select id="diffFrom" [(ngModel)]="diffFromSnapshotId">
+                        <option [ngValue]="null">Select</option>
+                        @for (snapshot of snapshots(); track snapshot.snapshotId) {
+                          <option [ngValue]="snapshot.snapshotId">{{ snapshot.message }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div class="field">
+                      <label for="diffTo">Compare to</label>
+                      <select id="diffTo" [(ngModel)]="diffToSnapshotId">
+                        <option [ngValue]="null">Select</option>
+                        @for (snapshot of snapshots(); track snapshot.snapshotId) {
+                          <option [ngValue]="snapshot.snapshotId">{{ snapshot.message }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <button class="secondary-action" type="button" (click)="compareSnapshots()">Compare</button>
                   </div>
 
-                  @for (reply of repliesFor(comment.commentId); track reply.commentId) {
-                    <div class="reply">
-                      <strong>{{ userLabel(reply.authorId) }}</strong>
-                      <small>{{ reply.createdAt | date: 'short' }}</small>
-                      <p>{{ reply.content }}</p>
+                  @if (latestSnapshot(); as latest) {
+                    <div class="workspace-history__meta">
+                      <span class="tag">{{ latest.branch }}</span>
+                      <span class="tag">{{ latest.tag || 'untagged' }}</span>
                     </div>
                   }
-                </article>
+
+                  @if (canWrite()) {
+                    <div class="workspace-history__controls">
+                      <div class="field">
+                        <label for="snapshotTag">Tag latest snapshot</label>
+                        <input id="snapshotTag" [(ngModel)]="snapshotTag" placeholder="v1.0.0" />
+                      </div>
+
+                      <div class="field">
+                        <label for="branchName">Create branch</label>
+                        <input id="branchName" [(ngModel)]="newBranchName" placeholder="feature/refactor" />
+                      </div>
+
+                      <div class="field">
+                        <label for="branchMessage">Branch note</label>
+                        <input id="branchMessage" [(ngModel)]="newBranchMessage" />
+                      </div>
+
+                      <div class="button-row">
+                        <button class="secondary-action" type="button" (click)="tagLatestSnapshot()">Save tag</button>
+                        <button class="primary-action" type="button" (click)="createBranch()">Create branch</button>
+                      </div>
+                    </div>
+                  }
+
+                  @if (diff(); as diff) {
+                    <div class="workspace-diff">
+                      <div class="workspace-diff__summary">
+                        <span class="tag">{{ diff.addedLines }} lines added</span>
+                        <span class="tag">{{ diff.removedLines }} lines removed</span>
+                      </div>
+
+                      @for (line of diff.lines; track $index) {
+                        <pre
+                          class="workspace-diff__line"
+                          [class.workspace-diff__line--add]="line.operation === 'ADD'"
+                          [class.workspace-diff__line--remove]="line.operation === 'REMOVE'"
+                        >{{ line.content }}</pre>
+                      }
+                    </div>
+                  } @else {
+                    <div class="empty-state">Select two snapshots to compare file history.</div>
+                  }
+                </div>
+              </section>
+            }
+
+            @case ('review') {
+              <section class="workspace-review">
+                <div class="workspace-review__code">
+                  <div class="workspace-toolbar">
+                    <button class="secondary-action" type="button" (click)="commentFilter.set('ALL')">All</button>
+                    <button class="secondary-action" type="button" (click)="commentFilter.set('OPEN')">Open</button>
+                    <button class="secondary-action" type="button" (click)="commentFilter.set('RESOLVED')">
+                      Resolved
+                    </button>
+                  </div>
+                  <div class="code-surface">{{ editorContent() }}</div>
+                </div>
+
+                <div class="workspace-review__comments">
+                  <div class="section-heading">
+                    <div>
+                      <p class="eyebrow">Code review</p>
+                      <h3>Inline comments</h3>
+                    </div>
+                    <span class="tag">{{ commentCount() }}</span>
+                  </div>
+
+                  @if (canWrite()) {
+                    <div class="field-grid">
+                      <div class="field">
+                        <label for="commentLine">Line number</label>
+                        <input id="commentLine" type="number" min="1" [(ngModel)]="commentLineNumber" />
+                      </div>
+
+                      <div class="field">
+                        <label for="commentContent">Comment</label>
+                        <textarea id="commentContent" [(ngModel)]="commentContent"></textarea>
+                      </div>
+
+                      <button class="primary-action" type="button" (click)="addComment()">
+                        {{ commentReplyParentId ? 'Reply to comment' : 'Post comment' }}
+                      </button>
+                    </div>
+                  }
+
+                  @if (rootComments().length) {
+                    <div class="workspace-comment-list">
+                      @for (comment of rootComments(); track comment.commentId) {
+                        <article class="workspace-comment">
+                          <strong>{{ userLabel(comment.authorId) }}</strong>
+                          <small>Line {{ comment.lineNumber }} | {{ comment.createdAt | date: 'short' }}</small>
+
+                          @if (editingCommentId() === comment.commentId) {
+                            <div class="field">
+                              <textarea [(ngModel)]="editingCommentContent"></textarea>
+                            </div>
+                          } @else {
+                            <p>{{ comment.content }}</p>
+                          }
+
+                          <div class="button-row">
+                            <button class="secondary-action" type="button" (click)="beginReply(comment.commentId)">
+                              Reply
+                            </button>
+                            <button class="secondary-action" type="button" (click)="beginCommentEdit(comment)">
+                              Edit
+                            </button>
+                            <button class="secondary-action" type="button" (click)="toggleCommentResolution(comment)">
+                              {{ comment.resolved ? 'Reopen' : 'Resolve' }}
+                            </button>
+                            <button class="danger-action" type="button" (click)="deleteComment(comment.commentId)">
+                              Delete
+                            </button>
+                            @if (editingCommentId() === comment.commentId) {
+                              <button class="primary-action" type="button" (click)="saveCommentEdit(comment.commentId)">
+                                Save
+                              </button>
+                            }
+                          </div>
+
+                          @for (reply of repliesFor(comment.commentId); track reply.commentId) {
+                            <div class="workspace-reply">
+                              <strong>{{ userLabel(reply.authorId) }}</strong>
+                              <small>{{ reply.createdAt | date: 'short' }}</small>
+                              <p>{{ reply.content }}</p>
+                            </div>
+                          }
+                        </article>
+                      }
+                    </div>
+                  } @else {
+                    <div class="empty-state">No inline comments on this file yet.</div>
+                  }
+                </div>
+              </section>
+            }
+          }
+        }
+      </main>
+
+      <aside class="workspace-side">
+        <article class="workspace-panel">
+          <div class="workspace-panel__header">
+            <span class="eyebrow">Participants</span>
+            <strong>{{ participants().length || project.memberUserIds.length + 1 }}</strong>
+          </div>
+
+          @if (participants().length) {
+            <div class="workspace-participants">
+              @for (participant of participants(); track participant.participantId) {
+                <div class="workspace-participant">
+                  <span class="workspace-avatar" [style.background]="participant.color || '#6e5aff'">
+                    {{ userLabel(participant.userId).charAt(0) }}
+                  </span>
+                  <div>
+                    <strong>{{ userLabel(participant.userId) }}</strong>
+                    <small>{{ participant.role }}</small>
+                  </div>
+                  @if (canManage() && participant.userId !== currentUser()?.userId) {
+                    <button class="secondary-action" type="button" (click)="kickParticipant(participant.userId)">
+                      Kick
+                    </button>
+                  }
+                </div>
               }
             </div>
           } @else {
-            <div class="empty-state">No comments on this file yet.</div>
+            <div class="empty-state">No active participants in this session yet.</div>
           }
         </article>
 
-        <article class="section-card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Collaboration</p>
-              <h3>Live sessions</h3>
-            </div>
+        <article class="workspace-panel">
+          <div class="workspace-panel__header">
+            <span class="eyebrow">Session</span>
+            <strong>{{ activeSession() ? activeSession()?.status : 'Inactive' }}</strong>
           </div>
 
           @if (activeSession(); as session) {
             <div class="field-grid">
-              <div class="tag">Session {{ session.sessionId }}</div>
-              <div class="tag">{{ session.participantCount }} participants</div>
+              <span class="tag">{{ session.participantCount }} / {{ session.maxParticipants }} participants</span>
+              <span class="tag">{{ session.passwordProtected ? 'Password protected' : 'Open session' }}</span>
+
               <div class="button-row">
                 <button class="secondary-action" type="button" (click)="joinSession()">Join</button>
                 <button class="secondary-action" type="button" (click)="syncCursor()">Sync cursor</button>
-                <button class="secondary-action" type="button" (click)="broadcastCurrentContent()">
-                  Broadcast current content
-                </button>
+                <button class="secondary-action" type="button" (click)="broadcastCurrentContent()">Broadcast</button>
                 <button class="secondary-action" type="button" (click)="leaveSession()">Leave</button>
                 @if (canManage()) {
                   <button class="danger-action" type="button" (click)="endSession()">End session</button>
                 }
               </div>
+
               <div class="field">
                 <label for="joinPassword">Session password</label>
                 <input id="joinPassword" [(ngModel)]="sessionJoinPassword" placeholder="If required" />
               </div>
-
-              @if (participants().length) {
-                <div class="participant-list">
-                  @for (participant of participants(); track participant.participantId) {
-                    <div class="participant-pill">
-                      <strong>{{ userLabel(participant.userId) }}</strong>
-                      <small>{{ participant.role }}</small>
-                      @if (canManage() && participant.userId !== currentUser()?.userId) {
-                        <button class="text-inline" type="button" (click)="kickParticipant(participant.userId)">
-                          Kick
-                        </button>
-                      }
-                    </div>
-                  }
-                </div>
-              }
             </div>
           } @else {
             <div class="field-grid">
@@ -477,58 +509,38 @@
                 <label for="sessionMax">Max participants</label>
                 <input id="sessionMax" type="number" min="1" max="100" [(ngModel)]="sessionMaxParticipants" />
               </div>
-
               <div class="field">
                 <label for="sessionPassword">Optional password</label>
-                <input id="sessionPassword" [(ngModel)]="sessionPassword" placeholder="Optional" />
+                <input id="sessionPassword" [(ngModel)]="sessionPassword" />
               </div>
-
-              <button class="secondary-action" type="button" (click)="createSession()">
-                Create live session
-              </button>
-            </div>
-          }
-
-          @if (sessions().length) {
-            <div class="timeline-list compare-box">
-              @for (session of sessions(); track session.sessionId) {
-                <article class="timeline-item">
-                  <strong>{{ session.language }} | {{ session.status }}</strong>
-                  <small>{{ session.createdAt | date: 'medium' }}</small>
-                  <small>{{ session.participantCount }} / {{ session.maxParticipants }} participants</small>
-                </article>
-              }
+              <button class="primary-action" type="button" (click)="createSession()">Create live session</button>
             </div>
           }
         </article>
 
-        <article class="section-card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Members</p>
-              <h3>Project access</h3>
-            </div>
+        <article class="workspace-panel">
+          <div class="workspace-panel__header">
+            <span class="eyebrow">Members</span>
+            <strong>{{ memberProfiles().length + (ownerProfile() ? 1 : 0) }}</strong>
           </div>
 
           @if (ownerProfile(); as owner) {
-            <div class="participant-pill">
+            <div class="workspace-member">
               <strong>{{ owner.fullName || owner.username }}</strong>
               <small>Owner</small>
             </div>
           }
 
-          @if (memberProfiles().length) {
-            <div class="participant-list">
-              @for (member of memberProfiles(); track member.userId) {
-                <div class="participant-pill">
-                  <strong>{{ member.fullName || member.username }}</strong>
-                  <small>@{{ member.username }}</small>
-                  @if (canManage()) {
-                    <button class="text-inline" type="button" (click)="removeMember(member.userId)">
-                      Remove
-                    </button>
-                  }
-                </div>
+          @for (member of memberProfiles(); track member.userId) {
+            <div class="workspace-member">
+              <div>
+                <strong>{{ member.fullName || member.username }}</strong>
+                <small>@{{ member.username }}</small>
+              </div>
+              @if (canManage()) {
+                <button class="secondary-action" type="button" (click)="removeMember(member.userId)">
+                  Remove
+                </button>
               }
             </div>
           }
@@ -541,24 +553,22 @@
               </div>
 
               <button class="secondary-action" type="button" (click)="searchMembers()">Search users</button>
-            </div>
 
-            @if (memberSearchResults().length) {
-              <div class="participant-list">
-                @for (user of memberSearchResults(); track user.userId) {
-                  <div class="participant-pill">
+              @for (user of memberSearchResults(); track user.userId) {
+                <div class="workspace-member">
+                  <div>
                     <strong>{{ user.fullName || user.username }}</strong>
                     <small>@{{ user.username }}</small>
-                    <button class="text-inline" type="button" (click)="addMember(user.userId)">Add</button>
                   </div>
-                }
-              </div>
-            }
+                  <button class="primary-action" type="button" (click)="addMember(user.userId)">Add</button>
+                </div>
+              }
+            </div>
           }
         </article>
-      </div>
-    </section>
-  } @else {
-    <div class="empty-state">Project not found or not accessible.</div>
-  }
-</div>
+      </aside>
+    </div>
+  </section>
+} @else {
+  <div class="workspace-empty">Project not found or not accessible.</div>
+}

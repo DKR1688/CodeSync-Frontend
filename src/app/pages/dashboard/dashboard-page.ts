@@ -5,7 +5,41 @@ import { Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { CodesyncApiService } from '../../core/services/codesync-api.service';
-import { Project, SupportedLanguage } from '../../shared/models/codesync.models';
+import {
+  ExecutionJob,
+  NotificationItem,
+  Project,
+  SupportedLanguage,
+} from '../../shared/models/codesync.models';
+
+const createFallbackLanguage = (
+  language: string,
+  displayName: string,
+  sourceFileName: string,
+  runCommand: string,
+): SupportedLanguage => ({
+  language,
+  displayName,
+  runtimeVersion: 'builtin',
+  dockerImage: 'pending-backend-runtime',
+  sourceFileName,
+  runCommand,
+  enabled: true,
+  defaultTimeLimitSeconds: 10,
+  defaultMemoryLimitMb: 256,
+  createdAt: '',
+  updatedAt: '',
+});
+
+const FALLBACK_SUPPORTED_LANGUAGES: SupportedLanguage[] = [
+  createFallbackLanguage('java', 'Java', 'Main.java', 'javac Main.java && java Main'),
+  createFallbackLanguage('python', 'Python', 'main.py', 'python main.py'),
+  createFallbackLanguage('javascript', 'JavaScript', 'index.js', 'node index.js'),
+  createFallbackLanguage('typescript', 'TypeScript', 'main.ts', 'ts-node main.ts'),
+  createFallbackLanguage('go', 'Go', 'main.go', 'go run main.go'),
+  createFallbackLanguage('cpp', 'C++', 'main.cpp', 'g++ main.cpp -o main && ./main'),
+  createFallbackLanguage('rust', 'Rust', 'main.rs', 'rustc main.rs && ./main'),
+];
 
 @Component({
   selector: 'app-dashboard-page',
@@ -24,16 +58,46 @@ export class DashboardPageComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly ownerProjects = signal<Project[]>([]);
   protected readonly memberProjects = signal<Project[]>([]);
-  protected readonly languages = signal<SupportedLanguage[]>([]);
+  protected readonly backendLanguages = signal<SupportedLanguage[]>([]);
+  protected readonly notifications = signal<NotificationItem[]>([]);
+  protected readonly myExecutions = signal<ExecutionJob[]>([]);
   protected readonly selectedOwnedProjectId = signal<number | null>(null);
+  protected readonly availableLanguages = computed(() =>
+    this.backendLanguages().length ? this.backendLanguages() : FALLBACK_SUPPORTED_LANGUAGES,
+  );
+  protected readonly languageNotice = computed(() =>
+    !this.loading() && !this.backendLanguages().length
+      ? 'Execution languages are not loading from the backend right now, so this form is using a built-in language list.'
+      : null,
+  );
   protected readonly selectedOwnedProject = computed(() =>
     this.ownerProjects().find((project) => project.projectId === this.selectedOwnedProjectId()) || null,
+  );
+  protected readonly recentProjects = computed(() =>
+    [...this.ownerProjects(), ...this.memberProjects()]
+      .filter(
+        (project, index, projects) =>
+          projects.findIndex((candidate) => candidate.projectId === project.projectId) === index,
+      )
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+      .slice(0, 4),
+  );
+  protected readonly codeRunsToday = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.myExecutions().filter((job) => job.createdAt.startsWith(today)).length;
+  });
+  protected readonly unreadNotifications = computed(() =>
+    this.notifications().filter((notification) => !notification.read).length,
+  );
+  protected readonly displayName = computed(() => this.auth.user()?.fullName?.split(' ')[0] || 'Developer');
+  protected readonly activeSection = signal<'overview' | 'projects' | 'profile' | 'create' | 'security'>(
+    'overview',
   );
 
   protected readonly createProjectForm = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required]],
     description: [''],
-    language: ['java', [Validators.required]],
+    language: [FALLBACK_SUPPORTED_LANGUAGES[0].language, [Validators.required]],
     visibility: ['PRIVATE' as 'PUBLIC' | 'PRIVATE', [Validators.required]],
   });
 
@@ -53,7 +117,7 @@ export class DashboardPageComponent {
   protected readonly projectDetailsForm = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required]],
     description: [''],
-    language: ['java', [Validators.required]],
+    language: [FALLBACK_SUPPORTED_LANGUAGES[0].language, [Validators.required]],
     visibility: ['PRIVATE' as 'PUBLIC' | 'PRIVATE', [Validators.required]],
   });
 
@@ -91,6 +155,7 @@ export class DashboardPageComponent {
         this.createProjectForm.patchValue({
           name: '',
           description: '',
+          language: this.availableLanguages()[0]?.language ?? FALLBACK_SUPPORTED_LANGUAGES[0].language,
           visibility: 'PRIVATE',
         });
         this.router.navigate(['/projects', project.projectId]);
@@ -249,15 +314,24 @@ export class DashboardPageComponent {
       ownerProjects: this.api.getProjectsByOwner(userId).pipe(catchError(() => of([]))),
       memberProjects: this.api.getProjectsByMember(userId).pipe(catchError(() => of([]))),
       languages: this.api.getSupportedLanguages().pipe(catchError(() => of([]))),
+      notifications: this.api.getNotificationsByRecipient(userId).pipe(catchError(() => of([]))),
+      myExecutions: this.api.getMyExecutions().pipe(catchError(() => of([]))),
     }).subscribe({
-      next: ({ ownerProjects, memberProjects, languages }) => {
+      next: ({ ownerProjects, memberProjects, languages, notifications, myExecutions }) => {
         this.ownerProjects.set(ownerProjects);
         this.memberProjects.set(
           memberProjects.filter(
             (project) => !ownerProjects.some((owned) => owned.projectId === project.projectId),
           ),
         );
-        this.languages.set(languages);
+        this.backendLanguages.set(languages);
+        this.notifications.set(
+          [...notifications].sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+        );
+        this.myExecutions.set(
+          [...myExecutions].sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+        );
+
         const selectedId = this.selectedOwnedProjectId();
         const selectedProject =
           ownerProjects.find((project) => project.projectId === selectedId) || ownerProjects[0] || null;
@@ -266,9 +340,9 @@ export class DashboardPageComponent {
         } else {
           this.selectedOwnedProjectId.set(null);
         }
-        if (!this.createProjectForm.controls.language.value && languages.length) {
-          this.createProjectForm.controls.language.setValue(languages[0].language);
-        }
+
+        this.ensureLanguageSelection();
+
         this.loading.set(false);
       },
       error: () => {
@@ -276,5 +350,23 @@ export class DashboardPageComponent {
         this.loading.set(false);
       },
     });
+  }
+
+  private ensureLanguageSelection(): void {
+    const languages = this.availableLanguages();
+    if (!languages.length) {
+      return;
+    }
+
+    const available = new Set(languages.map((language) => language.language));
+    const defaultLanguage = languages[0].language;
+
+    if (!available.has(this.createProjectForm.controls.language.value)) {
+      this.createProjectForm.controls.language.setValue(defaultLanguage);
+    }
+
+    if (!available.has(this.projectDetailsForm.controls.language.value)) {
+      this.projectDetailsForm.controls.language.setValue(defaultLanguage);
+    }
   }
 }

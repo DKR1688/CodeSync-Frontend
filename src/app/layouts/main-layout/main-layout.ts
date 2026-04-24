@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { CodesyncApiService } from '../../core/services/codesync-api.service';
@@ -17,13 +17,31 @@ export class MainLayoutComponent {
   private readonly router = inject(Router);
 
   protected readonly auth = inject(AuthStateService);
+  protected readonly currentPath = signal(this.router.url);
   protected readonly notifications = signal<NotificationItem[]>([]);
   protected readonly unreadCount = signal(0);
   protected readonly notificationsOpen = signal(false);
   protected readonly gatewayOnline = signal<boolean | null>(null);
+  protected readonly showChrome = computed(() => {
+    const path = this.currentPath();
+    return !(
+      path.startsWith('/login') ||
+      path.startsWith('/register') ||
+      path.startsWith('/oauth/callback') ||
+      path.startsWith('/dashboard') ||
+      path.startsWith('/admin') ||
+      path.startsWith('/projects/')
+    );
+  });
 
   constructor() {
     this.refreshGatewayStatus();
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.currentPath.set(event.urlAfterRedirects);
+        this.notificationsOpen.set(false);
+      }
+    });
 
     effect(() => {
       const user = this.auth.user();
@@ -90,6 +108,10 @@ export class MainLayoutComponent {
       .slice(0, 2)
       .map((part) => part.charAt(0).toUpperCase())
       .join('');
+  }
+
+  protected isCurrent(path: string): boolean {
+    return this.currentPath() === path;
   }
 
   private refreshGatewayStatus(): void {

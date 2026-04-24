@@ -116,8 +116,25 @@ export class CodesyncApiService {
     return this.http.get<Project[]>('/api/v1/projects/public');
   }
 
-  searchProjects(term: string): Observable<Project[]> {
-    const params = new HttpParams().set('keyword', term);
+  searchProjects(filters: {
+    keyword?: string | null;
+    name?: string | null;
+    ownerUsername?: string | null;
+  }): Observable<Project[]> {
+    let params = new HttpParams();
+
+    if (filters.keyword?.trim()) {
+      params = params.set('keyword', filters.keyword.trim());
+    }
+
+    if (filters.name?.trim()) {
+      params = params.set('name', filters.name.trim());
+    }
+
+    if (filters.ownerUsername?.trim()) {
+      params = params.set('ownerUsername', filters.ownerUsername.trim());
+    }
+
     return this.http.get<Project[]>('/api/v1/projects/search', { params });
   }
 

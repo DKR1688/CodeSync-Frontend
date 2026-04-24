@@ -1,102 +1,101 @@
 <div class="app-shell">
-  <div class="ambient ambient--one"></div>
-  <div class="ambient ambient--two"></div>
-  <div class="ambient ambient--three"></div>
-
-  <header class="shell-header">
-    <a class="brand" routerLink="/">
-      <span class="brand-mark">CS</span>
-      <span>
+  @if (showChrome()) {
+    <header class="shell-header">
+      <a class="brand" routerLink="/">
+        <span class="brand-mark">&lt;/&gt;</span>
         <strong>CodeSync</strong>
-        <small>Code together. Build faster.</small>
-      </span>
-    </a>
+      </a>
 
-    <nav class="shell-nav" aria-label="Primary navigation">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-      @if (auth.user()) {
-        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      }
-      @if (auth.isAdmin()) {
-        <a routerLink="/admin" routerLinkActive="active">Admin</a>
-      }
-    </nav>
-
-    <div class="shell-actions">
-      <span class="status-pill" [class.status-pill--offline]="gatewayOnline() === false">
-        <span class="status-dot"></span>
-        @if (gatewayOnline() === false) {
-          Backend offline
-        } @else {
-          Gateway ready
+      <nav class="shell-nav" aria-label="Primary navigation">
+        <a routerLink="/" [class.active]="isCurrent('/')">Home</a>
+        <a routerLink="/browse" routerLinkActive="active">Browse</a>
+        <a [routerLink]="['/browse']" [queryParams]="{ language: 'java' }">Languages</a>
+        @if (auth.user()) {
+          <a routerLink="/dashboard" routerLinkActive="active">My Projects</a>
         }
-      </span>
+      </nav>
 
-      @if (auth.user(); as user) {
-        <div class="notification-wrap">
-          <button class="icon-button" type="button" (click)="toggleNotifications()">
-            Notifications
-            @if (unreadCount() > 0) {
-              <span class="badge">{{ unreadCount() }}</span>
-            }
-          </button>
-
-          @if (notificationsOpen()) {
-            <section class="floating-panel">
-              <div class="panel-head">
-                <strong>Updates</strong>
-                <div class="button-row">
-                  <button type="button" class="text-button" (click)="markAllNotificationsRead()">
-                    Mark all read
-                  </button>
-                  <button type="button" class="text-button" (click)="deleteReadNotifications()">
-                    Delete read
-                  </button>
-                </div>
-              </div>
-
-              @if (notifications().length) {
-                <div class="panel-list">
-                  @for (item of notifications(); track item.notificationId) {
-                    <article class="panel-item" [class.panel-item--unread]="!item.read">
-                      <strong>{{ item.title }}</strong>
-                      <p>{{ item.message }}</p>
-                      <small>{{ item.createdAt | date: 'medium' }}</small>
-                      <button class="text-button" type="button" (click)="deleteNotification(item.notificationId)">
-                        Delete
-                      </button>
-                    </article>
-                  }
-                </div>
-              } @else {
-                <p class="panel-empty">No notifications yet.</p>
+      <div class="shell-actions">
+        @if (auth.user(); as user) {
+          <div class="notification-wrap">
+            <button class="top-action top-action--ghost" type="button" (click)="toggleNotifications()">
+              {{ initials(user.fullName, user.username) }}
+              @if (unreadCount() > 0) {
+                <span class="badge">{{ unreadCount() }}</span>
               }
-            </section>
+            </button>
+
+            @if (notificationsOpen()) {
+              <section class="floating-panel">
+                <div class="panel-head">
+                  <strong>Notifications</strong>
+                  <div class="button-row">
+                    <button type="button" class="text-button" (click)="markAllNotificationsRead()">
+                      Mark all read
+                    </button>
+                    <button type="button" class="text-button" (click)="deleteReadNotifications()">
+                      Delete read
+                    </button>
+                  </div>
+                </div>
+
+                @if (notifications().length) {
+                  <div class="panel-list">
+                    @for (item of notifications(); track item.notificationId) {
+                      <article class="panel-item" [class.panel-item--unread]="!item.read">
+                        <strong>{{ item.title }}</strong>
+                        <p>{{ item.message }}</p>
+                        <small>{{ item.createdAt | date: 'medium' }}</small>
+                        <button class="text-button" type="button" (click)="deleteNotification(item.notificationId)">
+                          Delete
+                        </button>
+                      </article>
+                    }
+                  </div>
+                } @else {
+                  <p class="panel-empty">No notifications yet.</p>
+                }
+              </section>
+            }
+          </div>
+
+          @if (auth.isAdmin()) {
+            <a class="top-action top-action--ghost" routerLink="/admin">Admin</a>
           }
-        </div>
+          <a class="top-action top-action--primary" routerLink="/dashboard">Dashboard</a>
+          <button class="top-action top-action--link" type="button" (click)="logout()">Log out</button>
+        } @else {
+          <a class="top-action top-action--primary" routerLink="/register">Sign up free</a>
+          <a class="top-action top-action--link" routerLink="/login">Log in</a>
+        }
+      </div>
+    </header>
+  }
 
-        <div class="user-chip">
-          <span class="avatar">{{ initials(user.fullName, user.username) }}</span>
-          <span>
-            <strong>{{ user.fullName || user.username }}</strong>
-            <small>{{ user.role | titlecase }}</small>
-          </span>
-        </div>
-
-        <button class="secondary-button" type="button" (click)="logout()">Logout</button>
-      } @else {
-        <a class="ghost-link" routerLink="/login">Login</a>
-        <a class="primary-button" routerLink="/register">Start Building</a>
-      }
-    </div>
-  </header>
-
-  <main class="shell-content">
+  <main class="shell-content" [class.shell-content--app]="!showChrome()">
     <router-outlet></router-outlet>
   </main>
 
-  <footer class="shell-footer">
-    <strong>CodeSync</strong>
-    <span>Collaborative coding workspace</span>
-  </footer>
+  @if (showChrome()) {
+    <footer class="shell-footer">
+      <div class="shell-footer__brand">
+        <span class="brand-mark">&lt;/&gt;</span>
+        <div>
+          <strong>CodeSync</strong>
+          <small>Browser-based code collaboration for guests, developers, and admins.</small>
+        </div>
+      </div>
+
+      <div class="shell-footer__links">
+        <a routerLink="/">Home</a>
+        <a routerLink="/browse">Browse</a>
+        @if (auth.user()) {
+          <a routerLink="/dashboard">Dashboard</a>
+        } @else {
+          <a routerLink="/login">Log in</a>
+          <a routerLink="/register">Register</a>
+        }
+      </div>
+    </footer>
+  }
 </div>

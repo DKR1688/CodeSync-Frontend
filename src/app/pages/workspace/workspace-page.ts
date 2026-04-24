@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { AuthStateService } from '../../core/services/auth-state.service';
@@ -24,7 +25,7 @@ import {
 
 @Component({
   selector: 'app-workspace-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './workspace-page.html',
   styleUrl: './workspace-page.css',
 })
@@ -58,6 +59,7 @@ export class WorkspacePageComponent {
   protected readonly commentCount = signal(0);
   protected readonly commentFilter = signal<'ALL' | 'OPEN' | 'RESOLVED'>('ALL');
   protected readonly editingCommentId = signal<number | null>(null);
+  protected readonly activeView = signal<'editor' | 'history' | 'review'>('editor');
 
   protected readonly sortedFiles = computed(() =>
     [...this.files()].sort((left, right) => left.path.localeCompare(right.path)),
@@ -139,6 +141,7 @@ export class WorkspacePageComponent {
       return;
     }
 
+    this.activeView.set('editor');
     this.selectedFile.set(file);
     this.renameValue = file.name;
     this.movePath = file.path;
@@ -370,6 +373,7 @@ export class WorkspacePageComponent {
       .subscribe({
         next: (snapshot) => {
           this.status.set('Snapshot created.');
+          this.activeView.set('history');
           this.snapshotMessage = '';
           this.snapshots.update((snapshots) => [snapshot, ...snapshots]);
         },
@@ -384,6 +388,7 @@ export class WorkspacePageComponent {
 
     this.api.diffSnapshots(this.diffFromSnapshotId, this.diffToSnapshotId).subscribe({
       next: (diff) => {
+        this.activeView.set('history');
         this.diff.set(diff);
       },
       error: () => this.error.set('Diff generation failed.'),
@@ -472,6 +477,7 @@ export class WorkspacePageComponent {
       .subscribe({
         next: (comment) => {
           this.status.set('Comment added.');
+          this.activeView.set('review');
           this.commentContent = '';
           this.commentReplyParentId = null;
           this.comments.update((comments) => [comment, ...comments]);
@@ -497,6 +503,7 @@ export class WorkspacePageComponent {
   }
 
   protected beginReply(commentId: number): void {
+    this.activeView.set('review');
     this.commentReplyParentId = commentId;
     this.commentContent = '';
   }

@@ -1,74 +1,71 @@
-<section class="auth-shell">
-  <article class="auth-copy section-card">
-    <p class="eyebrow">Start collaborating</p>
-    <h1>Create your developer workspace in CodeSync.</h1>
-    <p class="muted">
-      Registration goes through your backend auth service, then the frontend signs in automatically
-      so the user lands directly in the dashboard.
-    </p>
+<section class="auth-page">
+  <article class="auth-showcase">
+    <a class="auth-brand" routerLink="/">
+      <span class="auth-brand__mark">&lt;/&gt;</span>
+      <strong>CodeSync</strong>
+    </a>
 
-    <div class="auth-badges">
-      <span class="tag">Quick onboarding</span>
-      <span class="tag">Project-ready dashboard</span>
-      <span class="tag">Responsive from day one</span>
+    <div class="auth-copy">
+      <h1>Code with your team, in real time.</h1>
+      <p>
+        Join the platform to create projects, collaborate live, review code with comments, and run
+        backend-powered executions from a clean workspace.
+      </p>
+
+      <ul class="auth-list">
+        <li>Live cursor presence for every collaborator</li>
+        <li>Run 13+ languages in secure sandboxes</li>
+        <li>Git-style snapshots, diffs, and branches</li>
+        <li>Inline code review comments with threading</li>
+      </ul>
     </div>
   </article>
 
-  <article class="auth-form section-card">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Register</p>
-        <h2>Create account</h2>
-      </div>
+  <article class="auth-panel">
+    <div class="auth-toggle">
+      <a class="active" routerLink="/register">Create account</a>
+      <a routerLink="/login">Log in</a>
     </div>
+
+    <div class="oauth-stack">
+      <a class="oauth-button" [href]="googleLoginUrl">Continue with Google</a>
+      <a class="oauth-button" [href]="githubLoginUrl">Continue with GitHub</a>
+    </div>
+
+    <div class="auth-divider"><span>or with email</span></div>
 
     <form class="field-grid" [formGroup]="form" (ngSubmit)="submit()">
       <div class="field">
         <label for="fullName">Full name</label>
-        <input id="fullName" formControlName="fullName" placeholder="Deepak Sharma" />
+        <input id="fullName" formControlName="fullName" placeholder="Jane Doe" />
       </div>
 
-      <div class="field-grid field-grid--two">
-        <div class="field">
-          <label for="username">Username</label>
-          <input id="username" formControlName="username" placeholder="codesyncdev" />
-        </div>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" formControlName="username" placeholder="janedoe" />
+      </div>
 
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" type="email" formControlName="email" placeholder="developer@codesync.dev" />
-        </div>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input id="email" type="email" formControlName="email" placeholder="jane@example.com" />
       </div>
 
       <div class="field">
         <label for="password">Password</label>
-        <input id="password" type="password" formControlName="password" placeholder="Minimum 6 characters" />
+        <input id="password" type="password" formControlName="password" placeholder="Min. 8 characters" />
       </div>
 
       @if (error()) {
         <p class="status-message status-message--error">{{ error() }}</p>
       }
 
-      <button class="primary-action" type="submit" [disabled]="auth.loading()">Create account</button>
+      <button class="primary-action auth-submit" type="submit" [disabled]="auth.loading()">
+        Create account
+      </button>
     </form>
 
-    <div class="oauth-section">
-      <p class="oauth-label">Or continue with</p>
-      <div class="oauth-grid">
-        <a class="oauth-button oauth-button--google" [href]="googleLoginUrl">
-          <span class="oauth-button__mark">G</span>
-          <span>Google</span>
-        </a>
-        <a class="oauth-button oauth-button--github" [href]="githubLoginUrl">
-          <span class="oauth-button__mark">GH</span>
-          <span>GitHub</span>
-        </a>
-      </div>
-    </div>
-
-    <p class="muted">
-      Already registered?
-      <a routerLink="/login"><strong>Log in here</strong></a>
+    <p class="auth-footnote">
+      By joining you agree to the platform terms and privacy policy.
     </p>
   </article>
 </section>

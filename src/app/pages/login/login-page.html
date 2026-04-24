@@ -1,62 +1,59 @@
-<section class="auth-shell">
-  <article class="auth-copy section-card">
-    <p class="eyebrow">Developer access</p>
-    <h1>Return to your projects, reviews, and live sessions.</h1>
-    <p class="muted">
-      Sign in with the same backend auth service that powers profile access, permissions, and
-      protected project actions.
-    </p>
+<section class="auth-page">
+  <article class="auth-showcase">
+    <a class="auth-brand" routerLink="/">
+      <span class="auth-brand__mark">&lt;/&gt;</span>
+      <strong>CodeSync</strong>
+    </a>
 
-    <div class="auth-badges">
-      <span class="tag">Secure sign-in</span>
-      <span class="tag">Gateway connected</span>
-      <span class="tag">Project access ready</span>
+    <div class="auth-copy">
+      <h1>Code with your team, in real time.</h1>
+      <p>
+        Sign in to access protected projects, live collaboration sessions, inline comments, and
+        version history through the backend auth service.
+      </p>
+
+      <ul class="auth-list">
+        <li>Open your developer dashboard instantly</li>
+        <li>Run code in supported language sandboxes</li>
+        <li>Join active sessions and review changes inline</li>
+      </ul>
     </div>
   </article>
 
-  <article class="auth-form section-card">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Login</p>
-        <h2>Welcome back</h2>
-      </div>
+  <article class="auth-panel">
+    <div class="auth-toggle">
+      <a routerLink="/register">Create account</a>
+      <a class="active" routerLink="/login">Log in</a>
     </div>
+
+    <div class="oauth-stack">
+      <a class="oauth-button" [href]="googleLoginUrl">Continue with Google</a>
+      <a class="oauth-button" [href]="githubLoginUrl">Continue with GitHub</a>
+    </div>
+
+    <div class="auth-divider"><span>or with email</span></div>
 
     <form class="field-grid" [formGroup]="form" (ngSubmit)="submit()">
       <div class="field">
-        <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" placeholder="developer@codesync.dev" />
+        <label for="email">Email address</label>
+        <input id="email" type="email" formControlName="email" placeholder="jane@example.com" />
       </div>
 
       <div class="field">
         <label for="password">Password</label>
-        <input id="password" type="password" formControlName="password" placeholder="Enter your password" />
+        <input id="password" type="password" formControlName="password" placeholder="Min. 8 characters" />
       </div>
 
       @if (error()) {
         <p class="status-message status-message--error">{{ error() }}</p>
       }
 
-      <button class="primary-action" type="submit" [disabled]="auth.loading()">Login</button>
+      <button class="primary-action auth-submit" type="submit" [disabled]="auth.loading()">Log in</button>
     </form>
 
-    <div class="oauth-section">
-      <p class="oauth-label">Or continue with</p>
-      <div class="oauth-grid">
-        <a class="oauth-button oauth-button--google" [href]="googleLoginUrl">
-          <span class="oauth-button__mark">G</span>
-          <span>Google</span>
-        </a>
-        <a class="oauth-button oauth-button--github" [href]="githubLoginUrl">
-          <span class="oauth-button__mark">GH</span>
-          <span>GitHub</span>
-        </a>
-      </div>
-    </div>
-
-    <p class="muted">
-      No account yet?
-      <a routerLink="/register"><strong>Create one here</strong></a>
+    <p class="auth-footnote">
+      Need a new account?
+      <a routerLink="/register">Create one</a>
     </p>
   </article>
 </section>

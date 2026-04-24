@@ -1,16 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { CodesyncApiService } from '../../core/services/codesync-api.service';
 import {
-  NotificationItem,
-  NotificationType,
   CollabSession,
   ExecutionJob,
   ExecutionStats,
   LanguageRequest,
+  NotificationItem,
+  NotificationType,
   Project,
   SupportedLanguage,
   UserResponse,
@@ -37,6 +37,22 @@ export class AdminPageComponent {
   protected readonly stats = signal<ExecutionStats | null>(null);
   protected readonly notifications = signal<NotificationItem[]>([]);
   protected readonly editingLanguage = signal<string | null>(null);
+  protected readonly recentUsers = computed(() =>
+    [...this.users()].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, 5),
+  );
+  protected readonly activeSection = signal<
+    'overview' | 'users' | 'projects' | 'sessions' | 'executions' | 'broadcast' | 'languages' | 'notifications'
+  >('overview');
+  protected readonly languageUsage = computed(() => {
+    const stats = this.stats();
+    const entries = Object.entries(stats?.executionsByLanguage || {}).sort((left, right) => right[1] - left[1]);
+    const total = entries.reduce((sum, [, count]) => sum + count, 0) || 1;
+    return entries.map(([language, count]) => ({
+      language,
+      count,
+      percentage: Math.round((count / total) * 100),
+    }));
+  });
 
   protected readonly notificationTypes: NotificationType[] = [
     'BROADCAST',

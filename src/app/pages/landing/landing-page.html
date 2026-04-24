@@ -1,85 +1,106 @@
 <div class="page-shell">
-  <section class="hero glass-card">
-    <div class="hero-copy">
-      <p class="eyebrow">Online code collaboration platform</p>
-      <h1>Build, review, run, and restore code together from one clean workspace.</h1>
-      <p class="hero-text">
-        CodeSync turns your Java backend services into a polished Angular frontend for browsing
-        public projects, authenticating developers, working with files, reviewing code, tracking
-        snapshots, and coordinating live sessions.
+  <section class="landing-hero glass-card">
+    <div class="landing-hero__copy">
+      <span class="landing-pill">New: live collab sessions now support 20+ participants</span>
+      <h1>Code together. Build faster. Ship smarter.</h1>
+      <p class="landing-lead">
+        A browser-based live editor where teams write, run, and review code in real time with
+        version control, sandboxed execution, inline comments, and collaboration sessions.
       </p>
-
-      <div class="hero-badges">
-        <span class="tag">Realtime-ready workspace</span>
-        <span class="tag">Execution service integrated</span>
-        <span class="tag">Review and snapshots included</span>
-      </div>
 
       <div class="button-row">
         @if (auth.user()) {
-          <a class="primary-action" routerLink="/dashboard">Open Dashboard</a>
+          <a class="primary-action" routerLink="/dashboard">Open dashboard</a>
         } @else {
-          <a class="primary-action" routerLink="/register">Create account</a>
-          <a class="secondary-action" routerLink="/login">Sign in</a>
+          <a class="primary-action" routerLink="/register">Start coding free</a>
         }
+        <a class="secondary-action" routerLink="/browse">Browse public projects</a>
       </div>
     </div>
 
-    <div class="hero-metrics">
-      <article class="metric-card metric-card--spotlight">
-        <strong>{{ projects().length }}</strong>
-        <span>public projects discovered from backend</span>
-      </article>
-      <article class="metric-card">
-        <strong>{{ languages().length }}</strong>
-        <span>execution languages surfaced by the platform</span>
-      </article>
-      <article class="metric-card">
-        <strong>8</strong>
-        <span>microservice domains routed through the gateway</span>
-      </article>
-    </div>
+    <article class="editor-preview">
+      <header class="editor-preview__head">
+        <div class="editor-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <strong>{{ featuredProjects()[0]?.name || 'main.java' }} - CodeSync Editor</strong>
+      </header>
+
+      <div class="editor-preview__body">
+        <aside class="editor-panel">
+          <span class="editor-panel__label">Project files</span>
+          <ul class="editor-file-list">
+            <li class="active">{{ featuredProjects()[0]?.language || 'Main' }}.java</li>
+            <li>Utils.java</li>
+            <li>models/</li>
+            <li>Project.java</li>
+          </ul>
+        </aside>
+
+        <div class="editor-code">
+          <pre>public class Main &#123;
+  public static void main(String[] args) &#123;
+    System.out.println("Hello, CodeSync");
+  &#125;
+&#125;</pre>
+        </div>
+
+        <aside class="editor-panel editor-panel--right">
+          <span class="editor-panel__label">Collaborators</span>
+          <div class="collaborator-pill">
+            <span class="avatar avatar--violet">AK</span>
+            <div>
+              <strong>Alice</strong>
+              <small>editing</small>
+            </div>
+          </div>
+          <div class="collaborator-pill">
+            <span class="avatar avatar--green">BM</span>
+            <div>
+              <strong>Bob</strong>
+              <small>online</small>
+            </div>
+          </div>
+          <div class="collaborator-pill">
+            <span class="avatar avatar--orange">CR</span>
+            <div>
+              <strong>Carol</strong>
+              <small>reviewing</small>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </article>
   </section>
 
-  <section class="section-card">
+  <section class="feature-strip">
+    <article class="feature-card section-card">
+      <span class="feature-icon">○</span>
+      <h2>Real-time co-editing</h2>
+      <p class="muted">See teammate cursors and edits instantly during shared sessions.</p>
+    </article>
+
+    <article class="feature-card section-card">
+      <span class="feature-icon">▣</span>
+      <h2>Run code in sandbox</h2>
+      <p class="muted">Execute supported languages through the execution service.</p>
+    </article>
+
+    <article class="feature-card section-card">
+      <span class="feature-icon">↥</span>
+      <h2>Version snapshots</h2>
+      <p class="muted">Commit, diff, tag, and restore file history without leaving the editor.</p>
+    </article>
+  </section>
+
+  <section class="landing-stats section-card">
     <div class="section-heading">
       <div>
-        <p class="eyebrow">Explore projects</p>
-        <h2>Browse public workspaces before logging in.</h2>
+        <p class="eyebrow">Platform overview</p>
+        <h2>Backend-backed features for every actor.</h2>
       </div>
-      <span class="tag">{{ filteredProjects().length }} visible</span>
-    </div>
-
-    <div class="field-grid field-grid--two filters">
-      <div class="field">
-        <label for="search">Search by project, description, or language</label>
-        <input
-          id="search"
-          [ngModel]="searchTerm()"
-          (ngModelChange)="searchTerm.set($event)"
-          (keyup.enter)="refreshSearch()"
-          placeholder="Try java, collab, editor..."
-        />
-      </div>
-
-      <div class="field">
-        <label for="language">Filter by language</label>
-        <select
-          id="language"
-          [ngModel]="selectedLanguage()"
-          (ngModelChange)="selectedLanguage.set($event)"
-        >
-          <option value="ALL">All languages</option>
-          @for (language of languages(); track language.language) {
-            <option [value]="language.language">{{ language.displayName }}</option>
-          }
-        </select>
-      </div>
-    </div>
-
-    <div class="button-row">
-      <button class="primary-action" type="button" (click)="refreshSearch()">Search</button>
-      <button class="secondary-action" type="button" (click)="clearFilters()">Reset</button>
     </div>
 
     @if (error()) {
@@ -87,69 +108,70 @@
     }
 
     @if (loading()) {
-      <div class="empty-state">Loading project catalogue from the gateway...</div>
-    } @else if (filteredProjects().length) {
-      <div class="project-grid">
-        @for (project of filteredProjects(); track project.projectId) {
-          <article class="project-card">
-            <div class="project-card__head">
-              <span class="tag">{{ project.language || 'Code' }}</span>
-              <span class="tag">{{ project.visibility }}</span>
-            </div>
-            <h3>{{ project.name }}</h3>
-            <p>{{ project.description || 'No description added yet.' }}</p>
-            <div class="project-card__meta">
-              <span>{{ project.starCount }} stars</span>
-              <span>{{ project.forkCount }} forks</span>
-              <span>{{ project.memberUserIds.length }} collaborators</span>
-            </div>
-            <div class="button-row">
+      <div class="empty-state">Loading platform summary from the API gateway...</div>
+    } @else {
+      <div class="landing-stats__grid">
+        <article class="metric-card">
+          <strong>{{ projects().length }}</strong>
+          <span>public projects</span>
+        </article>
+        <article class="metric-card">
+          <strong>{{ languages().length }}</strong>
+          <span>supported languages</span>
+        </article>
+        <article class="metric-card">
+          <strong>3</strong>
+          <span>actor roles: guest, developer, admin</span>
+        </article>
+      </div>
+
+      <div class="landing-roles">
+        <article class="role-card">
+          <span class="tag">Guest</span>
+          <h3>Discover public projects</h3>
+          <p>Browse, filter, and inspect public repositories before signing in.</p>
+        </article>
+        <article class="role-card">
+          <span class="tag">Developer</span>
+          <h3>Build, review, and collaborate</h3>
+          <p>Create projects, edit files, run code, comment inline, and manage snapshots.</p>
+        </article>
+        <article class="role-card">
+          <span class="tag">Admin</span>
+          <h3>Operate the platform</h3>
+          <p>Manage users, languages, execution traffic, broadcasts, and active sessions.</p>
+        </article>
+      </div>
+
+      @if (featuredProjects().length) {
+        <div class="featured-projects">
+          @for (project of featuredProjects(); track project.projectId) {
+            <article class="featured-project">
+              <div class="featured-project__head">
+                <strong>{{ project.name }}</strong>
+                <span class="tag">{{ project.language }}</span>
+              </div>
+              <p>{{ project.description || 'No description added yet.' }}</p>
+              <div class="featured-project__meta">
+                <span>{{ project.starCount }} stars</span>
+                <span>{{ project.forkCount }} forks</span>
+                <span>{{ project.visibility }}</span>
+              </div>
               <a class="secondary-action" [routerLink]="['/projects', project.projectId]">
                 Open workspace
               </a>
-              @if (auth.user()) {
-                <button class="secondary-action" type="button" (click)="starProject(project.projectId)">
-                  Star
-                </button>
-                <button class="primary-action" type="button" (click)="forkProject(project.projectId)">
-                  Fork
-                </button>
-              }
-            </div>
-          </article>
-        }
-      </div>
-    } @else {
-      <div class="empty-state">No public projects matched the current search.</div>
+            </article>
+          }
+        </div>
+      }
+
+      @if (topLanguages().length) {
+        <div class="language-row">
+          @for (language of topLanguages(); track language.language) {
+            <span class="tag">{{ language.displayName }}</span>
+          }
+        </div>
+      }
     }
-  </section>
-
-  <section class="feature-grid">
-    <article class="section-card feature-card">
-      <p class="eyebrow">Editor</p>
-      <h2>File tree, browser editing, and project-aware save flows.</h2>
-      <p class="muted">
-        Create files and folders, work with project paths, and manage code content directly from a
-        responsive Angular workspace.
-      </p>
-    </article>
-
-    <article class="section-card feature-card">
-      <p class="eyebrow">Execution</p>
-      <h2>Run code through the execution service with stdout and stderr feedback.</h2>
-      <p class="muted">
-        The frontend is prepared to submit source, pass stdin, and display execution status history
-        from the backend.
-      </p>
-    </article>
-
-    <article class="section-card feature-card">
-      <p class="eyebrow">Review</p>
-      <h2>Comments, snapshots, diffs, and collaboration sessions all in one place.</h2>
-      <p class="muted">
-        Inline discussion, file history, live sessions, and member management are structured into
-        the workspace layout.
-      </p>
-    </article>
   </section>
 </div>

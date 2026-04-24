@@ -21,6 +21,12 @@ export const routes: Routes = [
         title: 'CodeSync | Login',
       },
       {
+        path: 'browse',
+        loadComponent: () =>
+          import('./pages/browse/browse-page').then((module) => module.BrowsePageComponent),
+        title: 'CodeSync | Browse Public Projects',
+      },
+      {
         path: 'register',
         loadComponent: () =>
           import('./pages/register/register-page').then((module) => module.RegisterPageComponent),
