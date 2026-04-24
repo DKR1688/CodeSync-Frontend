@@ -1,0 +1,354 @@
+<div class="page-shell">
+  <section class="glass-card admin-hero">
+    <div class="admin-hero__copy">
+      <p class="eyebrow">Administrator console</p>
+      <h1>Platform operations in one responsive control surface.</h1>
+      <p class="muted">
+        User accounts, projects, execution traffic, supported languages, active sessions, and
+        notification workflows are all surfaced from your backend admin endpoints.
+      </p>
+    </div>
+
+    <div class="admin-hero__panel">
+      <span class="tag">Operations, runtime, and governance view</span>
+      <p class="muted">
+        Designed for scanning large sets of platform data quickly without losing action clarity.
+      </p>
+
+      @if (stats(); as stats) {
+        <div class="grid-auto">
+          <article class="metric-card">
+            <strong>{{ users().length }}</strong>
+            <span>users</span>
+          </article>
+          <article class="metric-card">
+            <strong>{{ projects().length }}</strong>
+            <span>projects</span>
+          </article>
+          <article class="metric-card">
+            <strong>{{ stats.totalExecutions }}</strong>
+            <span>executions</span>
+          </article>
+          <article class="metric-card">
+            <strong>{{ notifications().length }}</strong>
+            <span>notifications</span>
+          </article>
+        </div>
+      }
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="status-message status-message--error">{{ error() }}</p>
+  }
+
+  @if (status()) {
+    <p class="status-message">{{ status() }}</p>
+  }
+
+  <section class="admin-grid">
+    <article class="section-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Accounts</p>
+          <h2>User management</h2>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="empty-state">Loading users...</div>
+      } @else {
+        <div class="table-list">
+          @for (user of users(); track user.userId) {
+            <div class="table-row">
+              <div>
+                <strong>{{ user.fullName || user.username }}</strong>
+                <small>@{{ user.username }} | {{ user.role }}</small>
+              </div>
+              <div class="button-row">
+                @if (user.active) {
+                  <button class="secondary-action" type="button" (click)="deactivateUser(user.userId)">
+                    Deactivate
+                  </button>
+                } @else {
+                  <button class="secondary-action" type="button" (click)="reactivateUser(user.userId)">
+                    Reactivate
+                  </button>
+                }
+                <button class="danger-action" type="button" (click)="deleteUser(user.userId)">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </article>
+
+    <article class="section-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Runtime</p>
+          <h2>Language registry</h2>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field-grid field-grid--two">
+          <div class="field">
+            <label for="langCode">Language code</label>
+            <input id="langCode" [(ngModel)]="languageForm.language" />
+          </div>
+          <div class="field">
+            <label for="langDisplay">Display name</label>
+            <input id="langDisplay" [(ngModel)]="languageForm.displayName" />
+          </div>
+        </div>
+
+        <div class="field-grid field-grid--two">
+          <div class="field">
+            <label for="langRuntime">Runtime version</label>
+            <input id="langRuntime" [(ngModel)]="languageForm.runtimeVersion" />
+          </div>
+          <div class="field">
+            <label for="langDocker">Docker image</label>
+            <input id="langDocker" [(ngModel)]="languageForm.dockerImage" />
+          </div>
+        </div>
+
+        <div class="field-grid field-grid--two">
+          <div class="field">
+            <label for="langSourceName">Source file name</label>
+            <input id="langSourceName" [(ngModel)]="languageForm.sourceFileName" />
+          </div>
+          <div class="field">
+            <label for="langRun">Run command</label>
+            <input id="langRun" [(ngModel)]="languageForm.runCommand" />
+          </div>
+        </div>
+
+        <div class="field-grid field-grid--two">
+          <div class="field">
+            <label for="langTimeLimit">Default time limit</label>
+            <input id="langTimeLimit" type="number" min="1" [(ngModel)]="languageForm.defaultTimeLimitSeconds" />
+          </div>
+          <div class="field">
+            <label for="langMemoryLimit">Default memory limit</label>
+            <input id="langMemoryLimit" type="number" min="16" [(ngModel)]="languageForm.defaultMemoryLimitMb" />
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="primary-action" type="button" (click)="saveLanguage()">
+            {{ editingLanguage() ? 'Update language' : 'Create language' }}
+          </button>
+          <button class="secondary-action" type="button" (click)="resetLanguageForm()">Reset</button>
+        </div>
+      </div>
+
+      <div class="table-list compare-box">
+        @for (language of languages(); track language.language) {
+          <div class="table-row">
+            <div>
+              <strong>{{ language.displayName }}</strong>
+              <small>{{ language.runtimeVersion }} | {{ language.dockerImage }}</small>
+            </div>
+            <div class="button-row">
+              <button class="secondary-action" type="button" (click)="editLanguage(language)">Edit</button>
+              <button class="secondary-action" type="button" (click)="toggleLanguage(language)">
+                {{ language.enabled ? 'Disable' : 'Enable' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </article>
+  </section>
+
+  <section class="admin-grid">
+    <article class="section-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Projects</p>
+          <h2>All projects</h2>
+        </div>
+      </div>
+
+      <div class="table-list">
+        @for (project of projects(); track project.projectId) {
+          <div class="table-row">
+            <div>
+              <strong>{{ project.name }}</strong>
+              <small>{{ project.language }} | owner {{ project.ownerId }} | {{ project.visibility }}</small>
+            </div>
+            <span class="tag">{{ project.memberUserIds.length }} members</span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="section-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Executions</p>
+          <h2>Recent jobs</h2>
+        </div>
+      </div>
+
+      <div class="table-list">
+        @for (job of jobs().slice(0, 8); track job.jobId) {
+          <div class="table-row">
+            <div>
+              <strong>{{ job.language }} | {{ job.status }}</strong>
+              <small>Project {{ job.projectId }} | user {{ job.userId }}</small>
+            </div>
+            <div class="button-row">
+              <span class="tag">{{ job.createdAt | date: 'short' }}</span>
+              @if (job.status === 'QUEUED' || job.status === 'RUNNING') {
+                <button class="danger-action" type="button" (click)="cancelExecution(job.jobId)">
+                  Cancel
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </article>
+  </section>
+
+  <section class="admin-grid">
+    <article class="section-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Notifications</p>
+          <h2>Broadcast notifications</h2>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label for="bulkRecipients">Recipient ids</label>
+          <input id="bulkRecipients" [(ngModel)]="bulkRecipientIds" placeholder="1, 2, 3" />
+        </div>
+
+        <div class="field">
+          <label for="bulkType">Type</label>
+          <select id="bulkType" [(ngModel)]="bulkNotificationType">
+            @for (type of notificationTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="bulkTitle">Title</label>
+          <input id="bulkTitle" [(ngModel)]="bulkNotificationTitle" />
+        </div>
+
+        <div class="field">
+          <label for="bulkMessage">Message</label>
+          <textarea id="bulkMessage" [(ngModel)]="bulkNotificationMessage"></textarea>
+        </div>
+
+        <div class="field-grid field-grid--two">
+          <div class="field">
+            <label for="bulkRelatedId">Related id</label>
+            <input id="bulkRelatedId" [(ngModel)]="bulkNotificationRelatedId" />
+          </div>
+          <div class="field">
+            <label for="bulkRelatedType">Related type</label>
+            <input id="bulkRelatedType" [(ngModel)]="bulkNotificationRelatedType" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="bulkLink">Deep link URL</label>
+          <input id="bulkLink" [(ngModel)]="bulkNotificationLink" placeholder="/projects/42" />
+        </div>
+
+        <button class="primary-action" type="button" (click)="sendBulkNotification()">
+          Send bulk notification
+        </button>
+      </div>
+    </article>
+
+    <article class="section-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Email</p>
+          <h2>Admin email sender</h2>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label for="emailTo">To</label>
+          <input id="emailTo" [(ngModel)]="emailTo" />
+        </div>
+        <div class="field">
+          <label for="emailSubject">Subject</label>
+          <input id="emailSubject" [(ngModel)]="emailSubject" />
+        </div>
+        <div class="field">
+          <label for="emailBody">Body</label>
+          <textarea id="emailBody" [(ngModel)]="emailBody"></textarea>
+        </div>
+        <button class="primary-action" type="button" (click)="sendAdminEmail()">Send email</button>
+      </div>
+    </article>
+  </section>
+
+  <section class="section-card">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Notification log</p>
+        <h2>Notification activity</h2>
+      </div>
+    </div>
+
+    <div class="field-grid field-grid--two admin-notification-filters">
+      <div class="field">
+        <label for="notificationTypeFilter">Filter by type</label>
+        <select id="notificationTypeFilter" [(ngModel)]="notificationTypeFilter" (change)="filterNotificationsByType()">
+          <option value="ALL">All</option>
+          @for (type of notificationTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="notificationRelatedLookup">Filter by related id</label>
+        <input
+          id="notificationRelatedLookup"
+          [(ngModel)]="notificationRelatedLookup"
+          (keyup.enter)="filterNotificationsByRelated()"
+          placeholder="project-42"
+        />
+      </div>
+    </div>
+
+    <div class="button-row admin-notification-filters__actions">
+      <button class="secondary-action" type="button" (click)="filterNotificationsByRelated()">Search related id</button>
+      <button class="secondary-action" type="button" (click)="notificationTypeFilter = 'ALL'; notificationRelatedLookup = ''; loadAdmin()">
+        Reset filters
+      </button>
+    </div>
+
+    <div class="table-list compare-box">
+      @for (notification of notifications().slice(0, 12); track notification.notificationId) {
+        <div class="table-row">
+          <div>
+            <strong>{{ notification.title }}</strong>
+            <small>{{ notification.type }} | recipient {{ notification.recipientId }}</small>
+            <small>{{ notification.message }}</small>
+          </div>
+          <div class="button-row">
+            <span class="tag">{{ notification.createdAt | date: 'short' }}</span>
+            <button class="danger-action" type="button" (click)="deleteNotification(notification.notificationId)">
+              Delete
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+</div>

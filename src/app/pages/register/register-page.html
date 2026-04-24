@@ -1,0 +1,74 @@
+<section class="auth-shell">
+  <article class="auth-copy section-card">
+    <p class="eyebrow">Start collaborating</p>
+    <h1>Create your developer workspace in CodeSync.</h1>
+    <p class="muted">
+      Registration goes through your backend auth service, then the frontend signs in automatically
+      so the user lands directly in the dashboard.
+    </p>
+
+    <div class="auth-badges">
+      <span class="tag">Quick onboarding</span>
+      <span class="tag">Project-ready dashboard</span>
+      <span class="tag">Responsive from day one</span>
+    </div>
+  </article>
+
+  <article class="auth-form section-card">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Register</p>
+        <h2>Create account</h2>
+      </div>
+    </div>
+
+    <form class="field-grid" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label for="fullName">Full name</label>
+        <input id="fullName" formControlName="fullName" placeholder="Deepak Sharma" />
+      </div>
+
+      <div class="field-grid field-grid--two">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" formControlName="username" placeholder="codesyncdev" />
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" formControlName="email" placeholder="developer@codesync.dev" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" placeholder="Minimum 6 characters" />
+      </div>
+
+      @if (error()) {
+        <p class="status-message status-message--error">{{ error() }}</p>
+      }
+
+      <button class="primary-action" type="submit" [disabled]="auth.loading()">Create account</button>
+    </form>
+
+    <div class="oauth-section">
+      <p class="oauth-label">Or continue with</p>
+      <div class="oauth-grid">
+        <a class="oauth-button oauth-button--google" [href]="googleLoginUrl">
+          <span class="oauth-button__mark">G</span>
+          <span>Google</span>
+        </a>
+        <a class="oauth-button oauth-button--github" [href]="githubLoginUrl">
+          <span class="oauth-button__mark">GH</span>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+
+    <p class="muted">
+      Already registered?
+      <a routerLink="/login"><strong>Log in here</strong></a>
+    </p>
+  </article>
+</section>

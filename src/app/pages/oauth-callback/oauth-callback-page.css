@@ -1,0 +1,21 @@
+.callback-shell {
+  max-width: 560px;
+  margin: 80px auto 0;
+  display: grid;
+  gap: 16px;
+  text-align: center;
+}
+
+.callback-shell h1,
+.callback-shell p {
+  margin: 0;
+}
+
+.callback-shell h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.callback-shell .secondary-action {
+  justify-self: center;
+}
