@@ -1,23 +1,102 @@
 <div class="app-shell">
+  <div class="ambient ambient--one"></div>
+  <div class="ambient ambient--two"></div>
+  <div class="ambient ambient--three"></div>
+
   <header class="shell-header">
     <a class="brand" routerLink="/">
       <span class="brand-mark">CS</span>
       <span>
         <strong>CodeSync</strong>
-        <small>Frontend Workspace</small>
+        <small>Code together. Build faster.</small>
       </span>
     </a>
 
     <nav class="shell-nav" aria-label="Primary navigation">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        Home
-      </a>
-      <a href="javascript:void(0)" aria-disabled="true">Projects</a>
-      <a href="javascript:void(0)" aria-disabled="true">Reviews</a>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      @if (auth.user()) {
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      }
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active">Admin</a>
+      }
     </nav>
+
+    <div class="shell-actions">
+      <span class="status-pill" [class.status-pill--offline]="gatewayOnline() === false">
+        <span class="status-dot"></span>
+        @if (gatewayOnline() === false) {
+          Backend offline
+        } @else {
+          Gateway ready
+        }
+      </span>
+
+      @if (auth.user(); as user) {
+        <div class="notification-wrap">
+          <button class="icon-button" type="button" (click)="toggleNotifications()">
+            Notifications
+            @if (unreadCount() > 0) {
+              <span class="badge">{{ unreadCount() }}</span>
+            }
+          </button>
+
+          @if (notificationsOpen()) {
+            <section class="floating-panel">
+              <div class="panel-head">
+                <strong>Updates</strong>
+                <div class="button-row">
+                  <button type="button" class="text-button" (click)="markAllNotificationsRead()">
+                    Mark all read
+                  </button>
+                  <button type="button" class="text-button" (click)="deleteReadNotifications()">
+                    Delete read
+                  </button>
+                </div>
+              </div>
+
+              @if (notifications().length) {
+                <div class="panel-list">
+                  @for (item of notifications(); track item.notificationId) {
+                    <article class="panel-item" [class.panel-item--unread]="!item.read">
+                      <strong>{{ item.title }}</strong>
+                      <p>{{ item.message }}</p>
+                      <small>{{ item.createdAt | date: 'medium' }}</small>
+                      <button class="text-button" type="button" (click)="deleteNotification(item.notificationId)">
+                        Delete
+                      </button>
+                    </article>
+                  }
+                </div>
+              } @else {
+                <p class="panel-empty">No notifications yet.</p>
+              }
+            </section>
+          }
+        </div>
+
+        <div class="user-chip">
+          <span class="avatar">{{ initials(user.fullName, user.username) }}</span>
+          <span>
+            <strong>{{ user.fullName || user.username }}</strong>
+            <small>{{ user.role | titlecase }}</small>
+          </span>
+        </div>
+
+        <button class="secondary-button" type="button" (click)="logout()">Logout</button>
+      } @else {
+        <a class="ghost-link" routerLink="/login">Login</a>
+        <a class="primary-button" routerLink="/register">Start Building</a>
+      }
+    </div>
   </header>
 
   <main class="shell-content">
     <router-outlet></router-outlet>
   </main>
+
+  <footer class="shell-footer">
+    <strong>CodeSync</strong>
+    <span>Collaborative coding workspace</span>
+  </footer>
 </div>
