@@ -23,6 +23,7 @@
         </div>
 
         @if (selectedFile() && canWrite()) {
+          <button class="secondary-action" type="button" (click)="saveFile()">Save</button>
           <button class="primary-action" type="button" (click)="runCode()">Run</button>
           <button class="secondary-action" type="button" (click)="activeView.set('history')">Snapshot</button>
         }
@@ -44,28 +45,32 @@
           <strong>{{ sortedFiles().length }} items</strong>
         </div>
 
-        <div class="field-grid">
-          <div class="field">
-            <label for="fileSearch">Search files</label>
-            <input
-              id="fileSearch"
-              [(ngModel)]="fileSearchTerm"
-              (keyup.enter)="searchFiles()"
-              placeholder="Search path or filename"
-            />
-          </div>
+        @if (canUseDeveloperFeatures()) {
+          <div class="field-grid">
+            <div class="field">
+              <label for="fileSearch">Search files</label>
+              <input
+                id="fileSearch"
+                [(ngModel)]="fileSearchTerm"
+                (keyup.enter)="searchFiles()"
+                placeholder="Search path or filename"
+              />
+            </div>
 
-          <div class="button-row">
-            <button class="secondary-action" type="button" (click)="searchFiles()">Search</button>
-            <button
-              class="secondary-action"
-              type="button"
-              (click)="fileSearchTerm = ''; fileSearchResults.set([])"
-            >
-              Clear
-            </button>
+            <div class="button-row">
+              <button class="secondary-action" type="button" (click)="searchFiles()">Search</button>
+              <button
+                class="secondary-action"
+                type="button"
+                (click)="fileSearchTerm = ''; fileSearchResults.set([])"
+              >
+                Clear
+              </button>
+            </div>
           </div>
-        </div>
+        } @else {
+          <div class="empty-state">Guests can browse project files in read-only mode. Sign in to search, run, review, or collaborate.</div>
+        }
 
         @if (displayedFiles().length) {
           <div class="workspace-file-list">
@@ -129,20 +134,22 @@
             >
               Editor
             </button>
-            <button
-              type="button"
-              [class.active]="activeView() === 'review'"
-              (click)="activeView.set('review')"
-            >
-              Review
-            </button>
-            <button
-              type="button"
-              [class.active]="activeView() === 'history'"
-              (click)="activeView.set('history')"
-            >
-              Version history
-            </button>
+            @if (canUseDeveloperFeatures()) {
+              <button
+                type="button"
+                [class.active]="activeView() === 'review'"
+                (click)="activeView.set('review')"
+              >
+                Review
+              </button>
+              <button
+                type="button"
+                [class.active]="activeView() === 'history'"
+                (click)="activeView.set('history')"
+              >
+                Version history
+              </button>
+            }
           </div>
         </div>
 
@@ -183,53 +190,56 @@
                   <textarea
                     class="workspace-code"
                     [ngModel]="editorContent()"
-                    (ngModelChange)="editorContent.set($event)"
+                    (ngModelChange)="updateEditorContent($event)"
                     [readonly]="!canWrite()"
                   ></textarea>
                 </div>
 
-                <div class="workspace-output">
-                  <div class="workspace-output__header">
-                    <strong>Output</strong>
-                    @if (executionResult()) {
-                      <span class="tag">{{ executionResult()?.status }}</span>
-                    }
-                  </div>
-
-                  <div class="field">
-                    <label for="stdin">Execution stdin</label>
-                    <textarea id="stdin" [(ngModel)]="executionInput" placeholder="Optional input"></textarea>
-                  </div>
-
-                  @if (executionResult(); as result) {
-                    <div class="code-surface">{{ result.stdout || 'No stdout output' }}</div>
-                    @if (result.stderr) {
-                      <div class="code-surface workspace-output__error">{{ result.stderr }}</div>
-                    }
-                  } @else {
-                    <div class="empty-state">Run the selected file to view execution output.</div>
-                  }
-
-                  @if (executions().length) {
-                    <div class="workspace-job-list">
-                      @for (job of executions().slice(0, 4); track job.jobId) {
-                        <article class="workspace-job">
-                          <strong>{{ job.language }} | {{ job.status }}</strong>
-                          <small>{{ job.createdAt | date: 'short' }}</small>
-                          @if (job.status === 'QUEUED' || job.status === 'RUNNING') {
-                            <button class="danger-action" type="button" (click)="cancelExecution(job.jobId)">
-                              Cancel
-                            </button>
-                          }
-                        </article>
+                @if (canUseDeveloperFeatures()) {
+                  <div class="workspace-output">
+                    <div class="workspace-output__header">
+                      <strong>Output</strong>
+                      @if (executionResult()) {
+                        <span class="tag">{{ executionResult()?.status }}</span>
                       }
                     </div>
-                  }
-                </div>
+
+                    <div class="field">
+                      <label for="stdin">Execution stdin</label>
+                      <textarea id="stdin" [(ngModel)]="executionInput" placeholder="Optional input"></textarea>
+                    </div>
+
+                    @if (executionResult(); as result) {
+                      <div class="code-surface">{{ result.stdout || 'No stdout output' }}</div>
+                      @if (result.stderr) {
+                        <div class="code-surface workspace-output__error">{{ result.stderr }}</div>
+                      }
+                    } @else {
+                      <div class="empty-state">Run the selected file to view execution output.</div>
+                    }
+
+                    @if (executions().length) {
+                      <div class="workspace-job-list">
+                        @for (job of executions().slice(0, 4); track job.jobId) {
+                          <article class="workspace-job">
+                            <strong>{{ job.language }} | {{ job.status }}</strong>
+                            <small>{{ job.createdAt | date: 'short' }}</small>
+                            @if (job.status === 'QUEUED' || job.status === 'RUNNING') {
+                              <button class="danger-action" type="button" (click)="cancelExecution(job.jobId)">
+                                Cancel
+                              </button>
+                            }
+                          </article>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
               </section>
             }
 
             @case ('history') {
+              @if (canUseDeveloperFeatures()) {
               <section class="workspace-history">
                 <div class="workspace-history__sidebar">
                   <div class="section-heading">
@@ -349,9 +359,11 @@
                   }
                 </div>
               </section>
+              }
             }
 
             @case ('review') {
+              @if (canUseDeveloperFeatures()) {
               <section class="workspace-review">
                 <div class="workspace-review__code">
                   <div class="workspace-toolbar">
@@ -407,19 +419,23 @@
                           }
 
                           <div class="button-row">
-                            <button class="secondary-action" type="button" (click)="beginReply(comment.commentId)">
-                              Reply
-                            </button>
-                            <button class="secondary-action" type="button" (click)="beginCommentEdit(comment)">
-                              Edit
-                            </button>
-                            <button class="secondary-action" type="button" (click)="toggleCommentResolution(comment)">
-                              {{ comment.resolved ? 'Reopen' : 'Resolve' }}
-                            </button>
-                            <button class="danger-action" type="button" (click)="deleteComment(comment.commentId)">
-                              Delete
-                            </button>
-                            @if (editingCommentId() === comment.commentId) {
+                            @if (canComment()) {
+                              <button class="secondary-action" type="button" (click)="beginReply(comment.commentId)">
+                                Reply
+                              </button>
+                              <button class="secondary-action" type="button" (click)="toggleCommentResolution(comment)">
+                                {{ comment.resolved ? 'Reopen' : 'Resolve' }}
+                              </button>
+                            }
+                            @if (canModifyComment(comment)) {
+                              <button class="secondary-action" type="button" (click)="beginCommentEdit(comment)">
+                                Edit
+                              </button>
+                              <button class="danger-action" type="button" (click)="deleteComment(comment.commentId)">
+                                Delete
+                              </button>
+                            }
+                            @if (editingCommentId() === comment.commentId && canModifyComment(comment)) {
                               <button class="primary-action" type="button" (click)="saveCommentEdit(comment.commentId)">
                                 Save
                               </button>
@@ -441,11 +457,13 @@
                   }
                 </div>
               </section>
+              }
             }
           }
         }
       </main>
 
+      @if (canUseDeveloperFeatures()) {
       <aside class="workspace-side">
         <article class="workspace-panel">
           <div class="workspace-panel__header">
@@ -567,6 +585,7 @@
           }
         </article>
       </aside>
+      }
     </div>
   </section>
 } @else {

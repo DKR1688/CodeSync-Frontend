@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -83,6 +84,20 @@ export class AdminPageComponent {
     this.loadAdmin();
   }
 
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof HttpErrorResponse) {
+      const message =
+        typeof error.error === 'string'
+          ? error.error
+          : (error.error?.message as string | undefined) || error.message;
+      if (message?.trim()) {
+        return message;
+      }
+    }
+
+    return fallback;
+  }
+
   protected deactivateUser(userId: number): void {
     this.api.deactivateUser(userId).subscribe({
       next: () => {
@@ -109,7 +124,7 @@ export class AdminPageComponent {
         this.status.set(`User ${userId} deleted.`);
         this.loadAdmin();
       },
-      error: () => this.error.set('Deleting the user failed.'),
+      error: (error) => this.error.set(this.extractErrorMessage(error, 'Deleting the user failed.')),
     });
   }
 

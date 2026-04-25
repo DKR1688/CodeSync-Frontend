@@ -52,6 +52,7 @@ export class WorkspacePageComponent {
   protected readonly participants = signal<Participant[]>([]);
   protected readonly selectedFile = signal<CodeFile | null>(null);
   protected readonly editorContent = signal('');
+  protected readonly editorDirty = signal(false);
   protected readonly memberIds = signal<number[]>([]);
   protected readonly userDirectory = signal<Record<number, UserResponse>>({});
   protected readonly memberSearchResults = signal<UserResponse[]>([]);
@@ -86,8 +87,11 @@ export class WorkspacePageComponent {
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
   );
   protected readonly currentUser = computed(() => this.auth.user());
+  protected readonly isAuthenticated = computed(() => !!this.auth.user() || this.auth.hasToken());
+  protected readonly canUseDeveloperFeatures = computed(() => this.isAuthenticated());
   protected readonly canWrite = computed(() => !!this.permissions()?.canWrite);
   protected readonly canManage = computed(() => !!this.permissions()?.canManage);
+  protected readonly canComment = computed(() => this.canUseDeveloperFeatures() && this.canWrite());
   protected readonly ownerProfile = computed(() => {
     const project = this.project();
     if (!project) {
@@ -124,6 +128,16 @@ export class WorkspacePageComponent {
   protected sessionMaxParticipants = 6;
   protected memberSearchTerm = '';
 
+  private readonly preserveSelectionState = {
+    preserveStatus: true,
+    preserveDiff: true,
+    preserveExecutionResult: true,
+    preserveActiveView: true,
+  };
+  private fileSelectionRequestId = 0;
+  private sessionPollHandle: ReturnType<typeof setInterval> | null = null;
+  private activePolledSessionId: string | null = null;
+
   constructor() {
     this.route.paramMap.subscribe((params) => {
       const projectId = Number(params.get('projectId'));
@@ -136,47 +150,73 @@ export class WorkspacePageComponent {
     });
   }
 
-  protected selectFile(file: CodeFile): void {
+  protected selectFile(
+    file: CodeFile,
+    options: {
+      preserveStatus?: boolean;
+      preserveDiff?: boolean;
+      preserveExecutionResult?: boolean;
+      preserveActiveView?: boolean;
+    } = {},
+  ): void {
     if (!file.fileId || !file.language) {
       return;
     }
 
-    this.activeView.set('editor');
+    if (!options.preserveActiveView) {
+      this.activeView.set('editor');
+    }
+    this.restrictGuestView();
     this.selectedFile.set(file);
     this.renameValue = file.name;
     this.movePath = file.path;
-    this.status.set(null);
-    this.diff.set(null);
-    this.executionResult.set(null);
+    const requestId = ++this.fileSelectionRequestId;
+    if (!options.preserveStatus) {
+      this.status.set(null);
+    }
+    if (!options.preserveDiff) {
+      this.diff.set(null);
+    }
+    if (!options.preserveExecutionResult) {
+      this.executionResult.set(null);
+    }
 
+    const developerFeaturesEnabled = this.canUseDeveloperFeatures();
     forkJoin({
       content: this.api.getFileContent(file.fileId),
-      comments: this.api
-        .getCommentsByFile(file.fileId, this.project()!.projectId)
-        .pipe(catchError(() => of([]))),
-      commentCount: this.api
-        .getCommentCount(file.fileId, this.project()!.projectId)
-        .pipe(catchError(() => of(0))),
-      snapshots: this.api
-        .getFileHistory(file.fileId, this.project()!.projectId)
-        .pipe(catchError(() => of([]))),
-      latestSnapshot: this.api
-        .getLatestSnapshot(file.fileId, this.snapshotBranch.trim() || undefined)
-        .pipe(catchError(() => of(null))),
-      activeSession: this.api.getActiveSessionForFile(file.fileId).pipe(catchError(() => of(null))),
+      comments: developerFeaturesEnabled
+        ? this.api.getCommentsByFile(file.fileId, this.project()!.projectId).pipe(catchError(() => of([])))
+        : of([]),
+      commentCount: developerFeaturesEnabled
+        ? this.api.getCommentCount(file.fileId, this.project()!.projectId).pipe(catchError(() => of(0)))
+        : of(0),
+      snapshots: developerFeaturesEnabled
+        ? this.api.getFileHistory(file.fileId, this.project()!.projectId).pipe(catchError(() => of([])))
+        : of([]),
+      latestSnapshot: developerFeaturesEnabled
+        ? this.api.getLatestSnapshot(file.fileId, this.snapshotBranch.trim() || undefined).pipe(catchError(() => of(null)))
+        : of(null),
+      activeSession: developerFeaturesEnabled
+        ? this.api.getActiveSessionForFile(file.fileId).pipe(catchError(() => of(null)))
+        : of(null),
     }).subscribe({
       next: ({ content, comments, commentCount, snapshots, latestSnapshot, activeSession }) => {
+        if (requestId !== this.fileSelectionRequestId || this.selectedFile()?.fileId !== file.fileId) {
+          return;
+        }
         this.editorContent.set(content);
+        this.editorDirty.set(false);
         this.comments.set(comments);
         this.commentCount.set(commentCount);
         this.snapshots.set(snapshots);
         this.latestSnapshot.set(latestSnapshot);
         this.activeSession.set(activeSession);
+        this.syncSessionPolling(activeSession?.sessionId || null);
         this.commentLineNumber = 1;
         const userIds = comments.map((comment) => comment.authorId);
         this.loadUserProfiles(userIds);
 
-        if (activeSession) {
+        if (developerFeaturesEnabled && activeSession) {
           this.loadParticipants(activeSession.sessionId);
         } else {
           this.participants.set([]);
@@ -195,9 +235,13 @@ export class WorkspacePageComponent {
     }
 
     this.api.updateFileContent(file.fileId, this.editorContent()).subscribe({
-      next: () => {
+      next: (updatedFile) => {
         this.status.set('File content saved successfully.');
-        this.refreshWorkspaceLists(file.fileId);
+        this.editorDirty.set(false);
+        this.selectedFile.set(updatedFile);
+        this.files.update((files) =>
+          files.map((item) => (item.fileId === updatedFile.fileId ? updatedFile : item)),
+        );
       },
       error: () => this.error.set('Saving this file failed.'),
     });
@@ -375,6 +419,7 @@ export class WorkspacePageComponent {
           this.status.set('Snapshot created.');
           this.activeView.set('history');
           this.snapshotMessage = '';
+          this.latestSnapshot.set(snapshot);
           this.snapshots.update((snapshots) => [snapshot, ...snapshots]);
         },
         error: () => this.error.set('Creating a snapshot failed.'),
@@ -488,6 +533,9 @@ export class WorkspacePageComponent {
   }
 
   protected toggleCommentResolution(comment: Comment): void {
+    if (!this.canComment()) {
+      return;
+    }
     const action = comment.resolved
       ? this.api.unresolveComment(comment.commentId)
       : this.api.resolveComment(comment.commentId);
@@ -503,18 +551,25 @@ export class WorkspacePageComponent {
   }
 
   protected beginReply(commentId: number): void {
+    if (!this.canComment()) {
+      return;
+    }
     this.activeView.set('review');
     this.commentReplyParentId = commentId;
     this.commentContent = '';
   }
 
   protected beginCommentEdit(comment: Comment): void {
+    if (!this.canModifyComment(comment)) {
+      return;
+    }
     this.editingCommentId.set(comment.commentId);
     this.editingCommentContent = comment.content;
   }
 
   protected saveCommentEdit(commentId: number): void {
-    if (!this.editingCommentContent.trim()) {
+    const comment = this.comments().find((item) => item.commentId === commentId);
+    if (!comment || !this.canModifyComment(comment) || !this.editingCommentContent.trim()) {
       return;
     }
 
@@ -532,6 +587,10 @@ export class WorkspacePageComponent {
   }
 
   protected deleteComment(commentId: number): void {
+    const comment = this.comments().find((item) => item.commentId === commentId);
+    if (!comment || !this.canModifyComment(comment)) {
+      return;
+    }
     this.api.deleteComment(commentId).subscribe({
       next: () => {
         this.comments.update((comments) => comments.filter((item) => item.commentId !== commentId));
@@ -559,6 +618,7 @@ export class WorkspacePageComponent {
         next: (session) => {
           this.status.set('Live session created.');
           this.activeSession.set(session);
+          this.syncSessionPolling(session.sessionId);
           this.sessions.update((sessions) => [session, ...sessions]);
           this.loadParticipants(session.sessionId);
         },
@@ -568,7 +628,7 @@ export class WorkspacePageComponent {
 
   protected joinSession(): void {
     const session = this.activeSession();
-    if (!session) {
+    if (!session || !this.canUseDeveloperFeatures()) {
       return;
     }
 
@@ -579,6 +639,7 @@ export class WorkspacePageComponent {
       .subscribe({
         next: () => {
           this.status.set('Joined the active session.');
+          this.syncSessionPolling(session.sessionId);
           this.loadParticipants(session.sessionId);
         },
         error: () => this.error.set('Joining the session failed.'),
@@ -587,40 +648,42 @@ export class WorkspacePageComponent {
 
   protected leaveSession(): void {
     const session = this.activeSession();
-    if (!session) {
+    if (!session || !this.canUseDeveloperFeatures()) {
       return;
     }
 
     this.api.leaveSession(session.sessionId).subscribe({
-      next: () => {
-        this.status.set('Left the current session.');
-        this.activeSession.set(null);
-        this.participants.set([]);
-      },
+        next: () => {
+          this.status.set('Left the current session.');
+          this.activeSession.set(null);
+          this.participants.set([]);
+          this.syncSessionPolling(null);
+        },
       error: () => this.error.set('Leaving the session failed.'),
     });
   }
 
   protected endSession(): void {
     const session = this.activeSession();
-    if (!session) {
+    if (!session || !this.canUseDeveloperFeatures()) {
       return;
     }
 
     this.api.endSession(session.sessionId).subscribe({
-      next: () => {
-        this.status.set('Session ended.');
-        this.activeSession.set(null);
-        this.participants.set([]);
-        this.refreshWorkspaceLists(this.selectedFile()?.fileId || null);
-      },
+        next: () => {
+          this.status.set('Session ended.');
+          this.activeSession.set(null);
+          this.participants.set([]);
+          this.syncSessionPolling(null);
+          this.refreshWorkspaceLists(this.selectedFile()?.fileId || null);
+        },
       error: () => this.error.set('Ending the session failed.'),
     });
   }
 
   protected broadcastCurrentContent(): void {
     const session = this.activeSession();
-    if (!session) {
+    if (!session || !this.canUseDeveloperFeatures()) {
       return;
     }
 
@@ -644,7 +707,7 @@ export class WorkspacePageComponent {
 
   protected syncCursor(): void {
     const session = this.activeSession();
-    if (!session) {
+    if (!session || !this.canUseDeveloperFeatures()) {
       return;
     }
 
@@ -680,7 +743,7 @@ export class WorkspacePageComponent {
 
   protected searchFiles(): void {
     const project = this.project();
-    if (!project || !this.fileSearchTerm.trim()) {
+    if (!project || !this.canUseDeveloperFeatures() || !this.fileSearchTerm.trim()) {
       this.fileSearchResults.set([]);
       return;
     }
@@ -758,19 +821,30 @@ export class WorkspacePageComponent {
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   }
 
+  protected updateEditorContent(value: string): void {
+    if (!this.editorDirty()) {
+      this.fileSelectionRequestId++;
+    }
+    this.editorContent.set(value);
+    this.editorDirty.set(true);
+  }
+
   private loadWorkspace(projectId: number): void {
     this.loading.set(true);
     this.error.set(null);
     this.status.set(null);
 
+    const developerFeaturesEnabled = this.canUseDeveloperFeatures();
     forkJoin({
       project: this.api.getProject(projectId),
       permissions: this.api.getProjectPermissions(projectId),
       files: this.api.getProjectFiles(projectId).pipe(catchError(() => of([]))),
-      executions: this.api.getExecutionsByProject(projectId).pipe(catchError(() => of([]))),
-      sessions: this.api.getProjectSessions(projectId).pipe(catchError(() => of([]))),
+      executions: developerFeaturesEnabled
+        ? this.api.getExecutionsByProject(projectId).pipe(catchError(() => of([])))
+        : of([]),
+      sessions: developerFeaturesEnabled ? this.api.getProjectSessions(projectId).pipe(catchError(() => of([]))) : of([]),
       languages: this.api.getSupportedLanguages().pipe(catchError(() => of([]))),
-      memberIds: this.api.getProjectMembers(projectId).pipe(catchError(() => of([]))),
+      memberIds: developerFeaturesEnabled ? this.api.getProjectMembers(projectId).pipe(catchError(() => of([]))) : of([]),
     }).subscribe({
       next: ({ project, permissions, files, executions, sessions, languages, memberIds }) => {
         this.project.set(project);
@@ -782,6 +856,8 @@ export class WorkspacePageComponent {
         this.languages.set(languages);
         this.memberIds.set(memberIds);
         this.loadUserProfiles([project.ownerId, ...memberIds]);
+        this.restrictGuestView();
+        this.syncSessionPolling(null);
 
         const firstCodeFile = files.find((file) => !!file.language);
         if (firstCodeFile) {
@@ -805,13 +881,16 @@ export class WorkspacePageComponent {
       return;
     }
 
+    const developerFeaturesEnabled = this.canUseDeveloperFeatures();
     forkJoin({
       project: this.api.getProject(projectId),
       permissions: this.api.getProjectPermissions(projectId),
       files: this.api.getProjectFiles(projectId).pipe(catchError(() => of([]))),
-      executions: this.api.getExecutionsByProject(projectId).pipe(catchError(() => of([]))),
-      sessions: this.api.getProjectSessions(projectId).pipe(catchError(() => of([]))),
-      memberIds: this.api.getProjectMembers(projectId).pipe(catchError(() => of([]))),
+      executions: developerFeaturesEnabled
+        ? this.api.getExecutionsByProject(projectId).pipe(catchError(() => of([])))
+        : of([]),
+      sessions: developerFeaturesEnabled ? this.api.getProjectSessions(projectId).pipe(catchError(() => of([]))) : of([]),
+      memberIds: developerFeaturesEnabled ? this.api.getProjectMembers(projectId).pipe(catchError(() => of([]))) : of([]),
     }).subscribe({
       next: ({ project, permissions, files, executions, sessions, memberIds }) => {
         this.project.set(project);
@@ -822,6 +901,7 @@ export class WorkspacePageComponent {
         this.sessions.set(sessions);
         this.memberIds.set(memberIds);
         this.loadUserProfiles([project.ownerId, ...memberIds]);
+        this.restrictGuestView();
 
         const desiredFile =
           (preferredFileId && files.find((file) => file.fileId === preferredFileId)) ||
@@ -829,7 +909,9 @@ export class WorkspacePageComponent {
           null;
 
         if (desiredFile) {
-          this.selectFile(desiredFile);
+          this.selectFile(desiredFile, this.preserveSelectionState);
+        } else {
+          this.syncSessionPolling(null);
         }
       },
     });
@@ -893,5 +975,61 @@ export class WorkspacePageComponent {
       .trim()
       .replace(/\\/g, '/')
       .replace(/^\/+/, '');
+  }
+
+  private restrictGuestView(): void {
+    if (!this.canUseDeveloperFeatures() && this.activeView() !== 'editor') {
+      this.activeView.set('editor');
+    }
+  }
+
+  private syncSessionPolling(sessionId: string | null): void {
+    if (!sessionId || !this.canUseDeveloperFeatures()) {
+      if (this.sessionPollHandle) {
+        clearInterval(this.sessionPollHandle);
+      }
+      this.sessionPollHandle = null;
+      this.activePolledSessionId = null;
+      return;
+    }
+
+    if (this.activePolledSessionId === sessionId && this.sessionPollHandle) {
+      return;
+    }
+
+    if (this.sessionPollHandle) {
+      clearInterval(this.sessionPollHandle);
+    }
+
+    this.activePolledSessionId = sessionId;
+    this.sessionPollHandle = setInterval(() => {
+      const activeSessionId = this.activeSession()?.sessionId;
+      if (!activeSessionId || activeSessionId !== sessionId) {
+        this.syncSessionPolling(null);
+        return;
+      }
+
+      this.api.getSessionById(sessionId).pipe(catchError(() => of(null))).subscribe((session) => {
+        if (!session) {
+          this.activeSession.set(null);
+          this.participants.set([]);
+          this.syncSessionPolling(null);
+          return;
+        }
+
+        this.activeSession.set(session);
+        this.sessions.update((sessions) => {
+          const others = sessions.filter((item) => item.sessionId !== session.sessionId);
+          return [session, ...others];
+        });
+      });
+
+      this.loadParticipants(sessionId);
+    }, 3000);
+  }
+
+  protected canModifyComment(comment: Comment): boolean {
+    const currentUserId = this.currentUser()?.userId;
+    return !!currentUserId && (comment.authorId === currentUserId || this.canManage());
   }
 }

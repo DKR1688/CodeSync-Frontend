@@ -9,6 +9,8 @@
   --surface-deep: #1d1b3f;
   --panel: #2f3038;
   --panel-soft: #262730;
+  --select-menu-bg: #181921;
+  --select-menu-bg-active: #27283a;
   --text: #f7f6fb;
   --muted: #b8b1c3;
   --line: rgba(255, 255, 255, 0.08);
@@ -92,6 +94,28 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background-color: var(--select-menu-bg);
+  color: var(--text);
+}
+
+select option:checked,
+select option:hover,
+select option:focus {
+  background-color: var(--select-menu-bg-active);
+  color: var(--text);
+}
+
+select:disabled,
+select option:disabled {
+  color: var(--muted);
 }
 
 a {
