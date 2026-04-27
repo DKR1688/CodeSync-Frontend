@@ -29,6 +29,12 @@ export class BrowsePageComponent {
   protected readonly searchTerm = signal('');
   protected readonly selectedLanguage = signal('ALL');
   protected readonly sortMode = signal<BrowseSort>('STARRED');
+  protected readonly totalStars = computed(() =>
+    this.filteredProjects().reduce((total, project) => total + project.starCount, 0),
+  );
+  protected readonly totalForks = computed(() =>
+    this.filteredProjects().reduce((total, project) => total + project.forkCount, 0),
+  );
 
   protected readonly filteredProjects = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();

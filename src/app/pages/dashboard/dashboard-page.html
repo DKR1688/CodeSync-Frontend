@@ -1,51 +1,134 @@
 <section class="dashboard-shell">
-  <aside class="dashboard-sidebar">
-    <a class="dashboard-brand" routerLink="/">
-      <span class="dashboard-brand__mark">&lt;/&gt;</span>
-      <strong>CodeSync</strong>
-    </a>
+  <aside class="dashboard-sidebar" [class.dashboard-sidebar--collapsed]="sidebarCollapsed()">
+    <div class="dashboard-sidebar__top">
+      <a class="dashboard-brand" routerLink="/">
+        <span class="dashboard-brand__mark">&lt;/&gt;</span>
+        @if (!sidebarCollapsed()) {
+          <div class="dashboard-brand__copy">
+            <strong>CodeSync</strong>
+            <small>Workspace control center</small>
+          </div>
+        }
+      </a>
 
-    <nav class="dashboard-nav">
-      <button type="button" [class.active]="activeSection() === 'overview'" (click)="activeSection.set('overview')">
-        Dashboard
+      <button
+        class="dashboard-sidebar__toggle"
+        type="button"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        (click)="sidebarCollapsed.update((value) => !value)"
+      >
+        <span aria-hidden="true">{{ sidebarCollapsed() ? '>' : '<' }}</span>
       </button>
-      <button type="button" [class.active]="activeSection() === 'projects'" (click)="activeSection.set('projects')">
-        My projects
-      </button>
-      <button type="button" [class.active]="activeSection() === 'profile'" (click)="activeSection.set('profile')">
-        Profile
-      </button>
-      <button type="button" [class.active]="activeSection() === 'create'" (click)="activeSection.set('create')">
-        New project
-      </button>
-      <button type="button" [class.active]="activeSection() === 'security'" (click)="activeSection.set('security')">
-        Security
-      </button>
-      <a routerLink="/browse">Browse public</a>
-    </nav>
+    </div>
+
+    <div class="dashboard-sidebar__group">
+      @if (!sidebarCollapsed()) {
+        <p class="dashboard-sidebar__label">Workspace</p>
+      }
+
+      <nav class="dashboard-nav">
+        <button type="button" [class.active]="activeSection() === 'overview'" (click)="activeSection.set('overview')">
+          <span class="dashboard-nav__icon">OV</span>
+          @if (!sidebarCollapsed()) {
+            <span>Overview</span>
+          }
+        </button>
+        <button type="button" [class.active]="activeSection() === 'projects'" (click)="activeSection.set('projects')">
+          <span class="dashboard-nav__icon">PR</span>
+          @if (!sidebarCollapsed()) {
+            <span>My projects</span>
+          }
+        </button>
+        <button type="button" [class.active]="activeSection() === 'profile'" (click)="activeSection.set('profile')">
+          <span class="dashboard-nav__icon">PF</span>
+          @if (!sidebarCollapsed()) {
+            <span>Profile</span>
+          }
+        </button>
+        <button type="button" [class.active]="activeSection() === 'create'" (click)="activeSection.set('create')">
+          <span class="dashboard-nav__icon">NP</span>
+          @if (!sidebarCollapsed()) {
+            <span>New project</span>
+          }
+        </button>
+        <button type="button" [class.active]="activeSection() === 'security'" (click)="activeSection.set('security')">
+          <span class="dashboard-nav__icon">SC</span>
+          @if (!sidebarCollapsed()) {
+            <span>Security</span>
+          }
+        </button>
+        <a routerLink="/browse">
+          <span class="dashboard-nav__icon">BR</span>
+          @if (!sidebarCollapsed()) {
+            <span>Browse public</span>
+          }
+        </a>
+      </nav>
+    </div>
 
     <div class="dashboard-user">
-      <span class="dashboard-user__avatar">
-        {{ auth.user()?.fullName?.charAt(0) || auth.user()?.username?.charAt(0) || 'D' }}
-      </span>
-      <div>
-        <strong>{{ auth.user()?.fullName || auth.user()?.username }}</strong>
-        <small>{{ auth.user()?.role }}</small>
-      </div>
+      <span class="dashboard-user__avatar">{{ userInitials() }}</span>
+      @if (!sidebarCollapsed()) {
+        <div class="dashboard-user__meta">
+          <strong>{{ auth.user()?.fullName || auth.user()?.username }}</strong>
+          <small>{{ auth.user()?.role }}</small>
+        </div>
+      }
     </div>
   </aside>
 
   <main class="dashboard-main">
-    <section class="dashboard-header">
-      <div>
-        <h1>Good morning, {{ displayName() }}</h1>
-        <p>{{ unreadNotifications() }} unread notifications and {{ memberProjects().length }} active collaborations</p>
+    <section class="dashboard-header dashboard-card">
+      <div class="dashboard-header__leading">
+        <p class="eyebrow">Dashboard</p>
+        <h1>Welcome back, {{ displayName() }}</h1>
+        <p>
+          Your projects, collaborations, notifications, and account settings are grouped into
+          dedicated operating sections so the workspace stays easy to manage.
+        </p>
+        <div class="dashboard-header__stats">
+          <span class="tag">{{ unreadNotifications() }} unread</span>
+          <span class="tag">{{ memberProjects().length }} active collaborations</span>
+          <span class="tag">{{ availableLanguages().length }} language profiles</span>
+        </div>
       </div>
-      <div class="button-row">
+
+      <div class="dashboard-header__actions">
         <a class="secondary-action" routerLink="/browse">Browse public</a>
-        <button class="primary-action" type="button" (click)="activeSection.set('create')">+ New project</button>
+        <button class="primary-action" type="button" (click)="activeSection.set('create')">Create project</button>
+        <button class="dashboard-profile-trigger" type="button" (click)="profileOpen.update((value) => !value)">
+          <span class="dashboard-user__avatar">{{ userInitials() }}</span>
+          <span>{{ auth.user()?.fullName || auth.user()?.username }}</span>
+        </button>
       </div>
     </section>
+
+    @if (profileOpen()) {
+      <section class="dashboard-profile-panel dashboard-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Profile details</p>
+            <h2>{{ auth.user()?.fullName || auth.user()?.username }}</h2>
+          </div>
+          <button class="secondary-action" type="button" (click)="profileOpen.set(false)">Close</button>
+        </div>
+
+        <div class="dashboard-profile-panel__grid">
+          <article class="metric-card dashboard-profile-panel__stat dashboard-profile-panel__stat--wide">
+            <span>Email</span>
+            <strong>{{ auth.user()?.email }}</strong>
+          </article>
+          <article class="metric-card dashboard-profile-panel__stat">
+            <span>Role</span>
+            <strong>{{ auth.user()?.role }}</strong>
+          </article>
+          <article class="metric-card dashboard-profile-panel__stat">
+            <span>Owned projects</span>
+            <strong>{{ ownerProjects().length }}</strong>
+          </article>
+        </div>
+      </section>
+    }
 
     @if (error()) {
       <p class="status-message status-message--error">{{ error() }}</p>
@@ -60,75 +143,51 @@
     }
 
     @if (activeSection() === 'overview') {
-      <section class="dashboard-metrics">
-        <article class="metric-card">
-          <span>My projects</span>
-          <strong>{{ ownerProjects().length }}</strong>
-        </article>
-        <article class="metric-card">
-          <span>Collaborations</span>
-          <strong>{{ memberProjects().length }}</strong>
-        </article>
-        <article class="metric-card">
-          <span>Code runs today</span>
-          <strong>{{ codeRunsToday() }}</strong>
-        </article>
-        <article class="metric-card">
-          <span>Notifications</span>
-          <strong>{{ unreadNotifications() }}</strong>
-        </article>
-      </section>
-
-      <section class="dashboard-content dashboard-content--overview">
-        <article class="dashboard-card">
-          <div class="section-heading">
+      <section class="dashboard-overview-grid">
+        <article class="dashboard-card dashboard-spotlight">
+          <div class="section-heading section-heading--compact">
             <div>
-              <p class="eyebrow">Recent projects</p>
-              <h2>Open your latest workspaces</h2>
+              <p class="eyebrow">Workspace summary</p>
+              <h2>Operate your coding workspace from one place.</h2>
             </div>
           </div>
 
-          @if (loading()) {
-            <div class="empty-state">Loading your projects...</div>
-          } @else if (recentProjects().length) {
-            <div class="project-grid">
-              @for (project of recentProjects(); track project.projectId) {
-                <article class="project-card">
-                  <div class="project-card__head">
-                    <span class="project-card__badge">{{ project.language.slice(0, 2).toUpperCase() }}</span>
-                    <span class="tag">{{ project.visibility }}</span>
-                  </div>
-                  <strong>{{ project.name }}</strong>
-                  <p>{{ project.description || 'No description added yet.' }}</p>
-                  <small>Updated {{ project.updatedAt | date: 'short' }}</small>
-                  <div class="button-row">
-                    <a class="secondary-action" [routerLink]="['/projects', project.projectId]">Open</a>
-                    @if (!ownerProjects().some((owned) => owned.projectId === project.projectId)) {
-                      <button class="primary-action" type="button" (click)="forkProject(project.projectId)">Fork</button>
-                    } @else {
-                      <button class="secondary-action" type="button" (click)="selectOwnedProject(project); activeSection.set('projects')">
-                        Manage
-                      </button>
-                    }
-                  </div>
-                </article>
-              }
+          <p class="dashboard-spotlight__copy">
+            Use this view to jump between project creation, public discovery, profile updates, and
+            day-to-day collaboration signals without digging through multiple pages.
+          </p>
 
-              <button class="project-card project-card--create" type="button" (click)="activeSection.set('create')">
-                <span>+</span>
-                <strong>Create new project</strong>
-              </button>
-            </div>
-          } @else {
-            <div class="empty-state">You have not created or joined a project yet.</div>
-          }
+          <section class="dashboard-metrics">
+            <article class="metric-card">
+              <span>My projects</span>
+              <strong>{{ ownerProjects().length }}</strong>
+            </article>
+            <article class="metric-card">
+              <span>Collaborations</span>
+              <strong>{{ memberProjects().length }}</strong>
+            </article>
+            <article class="metric-card">
+              <span>Code runs today</span>
+              <strong>{{ codeRunsToday() }}</strong>
+            </article>
+            <article class="metric-card">
+              <span>Notifications</span>
+              <strong>{{ unreadNotifications() }}</strong>
+            </article>
+          </section>
+
+          <div class="dashboard-quick-actions">
+            <button class="secondary-action" type="button" (click)="activeSection.set('projects')">Manage projects</button>
+            <button class="secondary-action" type="button" (click)="activeSection.set('profile')">Edit profile</button>
+            <button class="secondary-action" type="button" (click)="activeSection.set('security')">Review security</button>
+          </div>
         </article>
 
-        <article class="dashboard-card">
-          <div class="section-heading">
+        <article class="dashboard-card dashboard-card--stack">
+          <div class="section-heading section-heading--compact">
             <div>
-              <p class="eyebrow">Notifications</p>
-              <h2>Recent activity</h2>
+              <p class="eyebrow">Recent activity</p>
+              <h2>Notification stream</h2>
             </div>
           </div>
 
@@ -147,6 +206,50 @@
           }
         </article>
       </section>
+
+      <article class="dashboard-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Recent projects</p>
+            <h2>Open your latest workspaces</h2>
+          </div>
+        </div>
+
+        @if (loading()) {
+          <div class="empty-state">Loading your projects...</div>
+        } @else if (recentProjects().length) {
+          <div class="project-grid">
+            @for (project of recentProjects(); track project.projectId) {
+              <article class="project-card">
+                <div class="project-card__head">
+                  <span class="project-card__badge">{{ project.language.slice(0, 2).toUpperCase() }}</span>
+                  <span class="tag">{{ project.visibility }}</span>
+                </div>
+                <strong>{{ project.name }}</strong>
+                <p>{{ project.description || 'No description added yet.' }}</p>
+                <small>Updated {{ project.updatedAt | date: 'short' }}</small>
+                <div class="button-row">
+                  <a class="secondary-action" [routerLink]="['/projects', project.projectId]">Open</a>
+                  @if (!ownerProjects().some((owned) => owned.projectId === project.projectId)) {
+                    <button class="primary-action" type="button" (click)="forkProject(project.projectId)">Fork</button>
+                  } @else {
+                    <button class="secondary-action" type="button" (click)="selectOwnedProject(project); activeSection.set('projects')">
+                      Manage
+                    </button>
+                  }
+                </div>
+              </article>
+            }
+
+            <button class="project-card project-card--create" type="button" (click)="activeSection.set('create')">
+              <span>+</span>
+              <strong>Create new project</strong>
+            </button>
+          </div>
+        } @else {
+          <div class="empty-state">You have not created or joined a project yet.</div>
+        }
+      </article>
     }
 
     @if (activeSection() === 'projects') {
@@ -190,6 +293,12 @@
           </div>
 
           @if (selectedOwnedProject(); as project) {
+            <div class="dashboard-inline-summary">
+              <span class="tag">{{ project.visibility }}</span>
+              <span class="tag">{{ project.language }}</span>
+              <span class="tag">Updated {{ project.updatedAt | date: 'short' }}</span>
+            </div>
+
             <form class="field-grid" [formGroup]="projectDetailsForm" (ngSubmit)="saveProjectDetails()">
               <div class="field">
                 <label for="editProjectName">Project name</label>
@@ -231,7 +340,7 @@
     }
 
     @if (activeSection() === 'profile') {
-      <section class="dashboard-content">
+      <section class="dashboard-content dashboard-content--single">
         <article class="dashboard-card">
           <div class="section-heading">
             <div>
@@ -266,14 +375,19 @@
     }
 
     @if (activeSection() === 'create') {
-      <section class="dashboard-content">
+      <section class="dashboard-content dashboard-content--single">
         <article class="dashboard-card">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Create</p>
-              <h2>New project</h2>
+              <h2>Start a new project</h2>
             </div>
           </div>
+
+          <p class="dashboard-card__copy">
+            Set the workspace name, language, and visibility up front so new projects stay clear
+            and well-organized from the beginning.
+          </p>
 
           <form class="field-grid" [formGroup]="createProjectForm" (ngSubmit)="createProject()">
             <div class="field">
@@ -331,6 +445,30 @@
               <button class="danger-action" type="button" (click)="deactivateCurrentAccount()">Deactivate account</button>
             </div>
           </form>
+        </article>
+
+        <article class="dashboard-card dashboard-card--stack">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Operational reminders</p>
+              <h2>Protect your workspace</h2>
+            </div>
+          </div>
+
+          <div class="dashboard-guidance">
+            <article>
+              <strong>Use strong credentials</strong>
+              <p>Rotate passwords when roles change and avoid reusing credentials across environments.</p>
+            </article>
+            <article>
+              <strong>Review project visibility</strong>
+              <p>Keep sensitive workspaces private until the repository and collaborators are ready for public access.</p>
+            </article>
+            <article>
+              <strong>Audit collaboration access</strong>
+              <p>Check member access regularly so only the right people can join active coding sessions.</p>
+            </article>
+          </div>
         </article>
       </section>
     }

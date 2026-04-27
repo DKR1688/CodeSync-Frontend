@@ -61,6 +61,9 @@ export class WorkspacePageComponent {
   protected readonly commentFilter = signal<'ALL' | 'OPEN' | 'RESOLVED'>('ALL');
   protected readonly editingCommentId = signal<number | null>(null);
   protected readonly activeView = signal<'editor' | 'history' | 'review'>('editor');
+  protected readonly explorerOpen = signal(true);
+  protected readonly activityOpen = signal(true);
+  protected readonly profileOpen = signal(false);
 
   protected readonly sortedFiles = computed(() =>
     [...this.files()].sort((left, right) => left.path.localeCompare(right.path)),
@@ -104,6 +107,14 @@ export class WorkspacePageComponent {
       .map((id) => this.userDirectory()[id])
       .filter((user): user is UserResponse => !!user),
   );
+  protected readonly currentUserInitials = computed(() => {
+    const source = this.currentUser()?.fullName || this.currentUser()?.username || 'Guest';
+    return source
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+  });
 
   protected newFilePath = '';
   protected fileSearchTerm = '';

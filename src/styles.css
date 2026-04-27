@@ -1,40 +1,99 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap');
 
 :root {
-  --bg: #18181b;
-  --bg-alt: #1e1f24;
-  --surface: #232327;
-  --surface-strong: #292a31;
-  --surface-muted: #25262d;
-  --surface-deep: #1d1b3f;
-  --panel: #2f3038;
-  --panel-soft: #262730;
-  --select-menu-bg: #181921;
-  --select-menu-bg-active: #27283a;
-  --text: #f7f6fb;
-  --muted: #b8b1c3;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(110, 90, 255, 0.34);
-  --accent: #6e5aff;
-  --accent-strong: #9e91ff;
-  --accent-soft: rgba(110, 90, 255, 0.12);
-  --accent-soft-strong: rgba(110, 90, 255, 0.2);
-  --warm: #ffb16c;
-  --warm-soft: rgba(255, 177, 108, 0.18);
-  --success: #7ad0a2;
-  --success-soft: rgba(122, 208, 162, 0.16);
-  --danger: #ff8a8a;
-  --warning: #f3d27d;
-  --shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
-  --shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.18);
-  --radius-xl: 22px;
+  --font-sans: 'Manrope', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+  --page-width: 1280px;
+  --radius-xl: 24px;
   --radius-lg: 18px;
   --radius-md: 14px;
   --radius-sm: 10px;
-  --page-width: 1220px;
+  --border-radius-xl: 28px;
+  --border-radius-lg: 20px;
+  --border-radius-md: 14px;
+  --border-radius-sm: 10px;
+}
+
+:root,
+:root[data-theme='light'] {
+  --color-background-primary: #f4f7fb;
+  --color-background-secondary: #ffffff;
+  --color-background-tertiary: #e8f0fb;
+  --color-border-secondary: #ced7e5;
+  --color-border-tertiary: #dee6f1;
+  --color-text-primary: #112033;
+  --color-text-secondary: #546476;
+  --color-text-tertiary: #7b8a9a;
+  --bg: var(--color-background-primary);
+  --bg-alt: #edf2f8;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-muted: #f8fbff;
+  --surface-deep: #0b1830;
+  --panel: #ffffff;
+  --panel-soft: #f8fbff;
+  --select-menu-bg: #ffffff;
+  --select-menu-bg-active: #edf5ff;
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --line: rgba(15, 39, 69, 0.11);
+  --line-strong: rgba(15, 91, 215, 0.28);
+  --accent: #0f5bd7;
+  --accent-strong: #1680f0;
+  --accent-soft: rgba(15, 91, 215, 0.1);
+  --accent-soft-strong: rgba(15, 91, 215, 0.18);
+  --warm: #eb8f34;
+  --warm-soft: rgba(235, 143, 52, 0.16);
+  --success: #0f766e;
+  --success-soft: rgba(15, 118, 110, 0.12);
+  --danger: #c14b4b;
+  --warning: #eb8f34;
+  --shadow: 0 26px 80px rgba(15, 30, 52, 0.12);
+  --shadow-soft: 0 12px 34px rgba(15, 30, 52, 0.08);
+  --glass-fill: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.88));
+  --panel-glow: linear-gradient(135deg, rgba(15, 91, 215, 0.08), rgba(15, 91, 215, 0) 42%);
+  --card-border-glow: rgba(15, 91, 215, 0.1);
+}
+
+:root[data-theme='dark'] {
+  --color-background-primary: #09111f;
+  --color-background-secondary: #111b2d;
+  --color-background-tertiary: #16253d;
+  --color-border-secondary: rgba(255, 255, 255, 0.12);
+  --color-border-tertiary: rgba(255, 255, 255, 0.08);
+  --color-text-primary: #eff5ff;
+  --color-text-secondary: #b3c0d3;
+  --color-text-tertiary: #8190a5;
+  --bg: #09111f;
+  --bg-alt: #0d1627;
+  --surface: #111b2d;
+  --surface-strong: #162338;
+  --surface-muted: #132032;
+  --surface-deep: #08101d;
+  --panel: #131f32;
+  --panel-soft: #18253b;
+  --select-menu-bg: #131f32;
+  --select-menu-bg-active: #1d3150;
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(77, 166, 255, 0.34);
+  --accent: #4da6ff;
+  --accent-strong: #7fc0ff;
+  --accent-soft: rgba(77, 166, 255, 0.14);
+  --accent-soft-strong: rgba(77, 166, 255, 0.2);
+  --warm: #f0a550;
+  --warm-soft: rgba(240, 165, 80, 0.16);
+  --success: #6ad0bc;
+  --success-soft: rgba(106, 208, 188, 0.16);
+  --danger: #ff8b8b;
+  --warning: #f0c46e;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.24);
   --glass-fill: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-  --panel-glow: linear-gradient(135deg, rgba(110, 90, 255, 0.16), rgba(110, 90, 255, 0) 42%);
-  --card-border-glow: rgba(255, 255, 255, 0.14);
+  --panel-glow: linear-gradient(135deg, rgba(77, 166, 255, 0.16), rgba(77, 166, 255, 0) 42%);
+  --card-border-glow: rgba(255, 255, 255, 0.12);
 }
 
 * {
@@ -53,13 +112,16 @@ html {
 body {
   margin: 0;
   color: var(--text);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-sans);
   background:
-    radial-gradient(circle at top left, rgba(110, 90, 255, 0.16), transparent 22%),
-    radial-gradient(circle at top right, rgba(99, 211, 255, 0.08), transparent 18%),
-    linear-gradient(180deg, #1b1b1f 0%, #141417 100%);
+    radial-gradient(circle at top left, var(--accent-soft-strong), transparent 24%),
+    radial-gradient(circle at bottom right, var(--success-soft), transparent 18%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
   background-attachment: fixed;
   position: relative;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 body::before,
@@ -78,7 +140,7 @@ body::before {
   left: -120px;
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, rgba(110, 90, 255, 0.12), transparent 68%);
+  background: radial-gradient(circle, var(--accent-soft-strong), transparent 68%);
 }
 
 body::after {
@@ -86,7 +148,7 @@ body::after {
   bottom: 8vh;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(255, 177, 108, 0.1), transparent 68%);
+  background: radial-gradient(circle, var(--warm-soft), transparent 68%);
 }
 
 button,
@@ -97,7 +159,7 @@ select {
 }
 
 select {
-  color-scheme: dark;
+  color-scheme: light dark;
 }
 
 select option,
@@ -144,7 +206,7 @@ select:focus,
 button:focus-visible,
 a:focus-visible {
   outline: 0;
-  box-shadow: 0 0 0 3px rgba(110, 90, 255, 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 .page-shell {
@@ -184,7 +246,7 @@ a:focus-visible {
 .section-card:hover {
   transform: translateY(-3px);
   border-color: var(--line-strong);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.34);
+  box-shadow: var(--shadow);
 }
 
 .section-heading {
@@ -211,13 +273,13 @@ a:focus-visible {
 .timeline-item strong,
 .participant-pill strong,
 .table-row strong {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-display);
 }
 
 .eyebrow {
   margin: 0 0 12px;
-  color: #cfc5b7;
-  font-family: 'Space Grotesk', sans-serif;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-display);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -241,9 +303,9 @@ a:focus-visible {
   gap: 8px;
   min-height: 42px;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid transparent;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 0.01em;
   transition:
@@ -257,19 +319,19 @@ a:focus-visible {
 .primary-action {
   color: #ffffff;
   background: var(--accent);
-  box-shadow: 0 14px 28px rgba(110, 90, 255, 0.22);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .secondary-action {
   color: var(--text);
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-strong);
 }
 
 .danger-action {
   color: var(--danger);
-  border-color: rgba(255, 138, 138, 0.18);
-  background: rgba(255, 138, 138, 0.08);
+  border-color: color-mix(in srgb, var(--danger) 24%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .primary-action:hover,
@@ -313,7 +375,7 @@ a:focus-visible {
 .field label {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ddd5c8;
+  color: var(--color-text-secondary);
 }
 
 .field input,
@@ -323,17 +385,18 @@ a:focus-visible {
   padding: 13px 15px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: linear-gradient(180deg, rgba(18, 19, 24, 0.96), rgba(34, 35, 42, 0.96));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface-muted) 98%, transparent));
   color: var(--text);
   transition:
     border-color 160ms ease,
     transform 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
 .field input::placeholder,
 .field textarea::placeholder {
-  color: #8e879b;
+  color: var(--color-text-tertiary);
 }
 
 .field input:focus,
@@ -354,17 +417,17 @@ a:focus-visible {
 
 .status-message {
   padding: 14px 16px;
-  border: 1px solid rgba(124, 217, 146, 0.24);
+  border: 1px solid color-mix(in srgb, var(--success) 26%, transparent);
   border-radius: 12px;
-  background: rgba(124, 217, 146, 0.08);
-  color: #b9f2c8;
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  color: var(--success);
   animation: fade-up 320ms ease both;
 }
 
 .status-message--error {
-  border-color: rgba(255, 124, 124, 0.22);
-  background: rgba(255, 124, 124, 0.08);
-  color: #ffc1c1;
+  border-color: color-mix(in srgb, var(--danger) 24%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
 }
 
 .grid-auto {
@@ -381,7 +444,7 @@ a:focus-visible {
   border: 1px solid var(--line);
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 98%, transparent), color-mix(in srgb, var(--surface) 98%, transparent)),
     var(--surface-strong);
   overflow: hidden;
 }
@@ -410,21 +473,21 @@ a:focus-visible {
   align-items: center;
   gap: 6px;
   padding: 6px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
-  color: #f1ebdd;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .code-surface {
   padding: 16px;
-  border: 1px solid rgba(108, 92, 231, 0.22);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   border-radius: 12px;
   background: var(--surface-deep);
-  color: #e7efff;
-  font-family: 'Consolas', 'Courier New', monospace;
+  color: #ece8ff;
+  font-family: var(--font-mono);
   white-space: pre-wrap;
   overflow: auto;
 }
@@ -433,13 +496,13 @@ a:focus-visible {
   padding: 24px;
   border: 1px dashed var(--line);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   color: var(--muted);
   text-align: center;
 }
 
 ::selection {
-  background: rgba(110, 90, 255, 0.36);
+  background: color-mix(in srgb, var(--accent) 36%, transparent);
   color: #ffffff;
 }
 

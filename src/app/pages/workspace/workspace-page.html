@@ -14,6 +14,14 @@
       </div>
 
       <div class="workspace-topbar__actions">
+        <button class="secondary-action" type="button" (click)="explorerOpen.update((value) => !value)">
+          {{ explorerOpen() ? 'Hide explorer' : 'Show explorer' }}
+        </button>
+        @if (canUseDeveloperFeatures()) {
+          <button class="secondary-action" type="button" (click)="activityOpen.update((value) => !value)">
+            {{ activityOpen() ? 'Hide side panel' : 'Show side panel' }}
+          </button>
+        }
         <div class="workspace-avatars">
           @for (participant of participants().slice(0, 3); track participant.participantId) {
             <span class="workspace-avatar" [style.background]="participant.color || '#6e5aff'">
@@ -27,8 +35,36 @@
           <button class="primary-action" type="button" (click)="runCode()">Run</button>
           <button class="secondary-action" type="button" (click)="activeView.set('history')">Snapshot</button>
         }
+        @if (currentUser()) {
+          <button class="workspace-profile-trigger" type="button" (click)="profileOpen.update((value) => !value)">
+            <span class="workspace-avatar">{{ currentUserInitials() }}</span>
+            <span>{{ currentUser()?.fullName || currentUser()?.username }}</span>
+          </button>
+        }
       </div>
     </header>
+
+    @if (profileOpen() && currentUser()) {
+      <section class="workspace-panel workspace-profile-panel">
+        <div class="workspace-panel__header">
+          <span class="eyebrow">Profile</span>
+          <button class="secondary-action" type="button" (click)="profileOpen.set(false)">Close</button>
+        </div>
+        <div class="workspace-member">
+          <div>
+            <strong>{{ currentUser()?.fullName || currentUser()?.username }}</strong>
+            <small>{{ currentUser()?.email }}</small>
+          </div>
+          <span class="tag">{{ currentUser()?.role }}</span>
+        </div>
+        <div class="workspace-member">
+          <div>
+            <strong>Access</strong>
+            <small>{{ canWrite() ? 'Can edit this project' : 'Read-only access' }}</small>
+          </div>
+        </div>
+      </section>
+    }
 
     @if (error()) {
       <p class="status-message status-message--error workspace-message">{{ error() }}</p>
@@ -38,7 +74,8 @@
       <p class="status-message workspace-message">{{ status() }}</p>
     }
 
-    <div class="workspace-layout">
+    <div class="workspace-layout" [class.workspace-layout--explorer-collapsed]="!explorerOpen()" [class.workspace-layout--side-collapsed]="!activityOpen()">
+      @if (explorerOpen()) {
       <aside class="workspace-explorer">
         <div class="workspace-panel__header">
           <span class="eyebrow">Explorer</span>
@@ -118,6 +155,7 @@
           </div>
         }
       </aside>
+      }
 
       <main class="workspace-main">
         <div class="workspace-main__header">
@@ -463,7 +501,7 @@
         }
       </main>
 
-      @if (canUseDeveloperFeatures()) {
+      @if (canUseDeveloperFeatures() && activityOpen()) {
       <aside class="workspace-side">
         <article class="workspace-panel">
           <div class="workspace-panel__header">

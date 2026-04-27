@@ -90,9 +90,19 @@ export class DashboardPageComponent {
     this.notifications().filter((notification) => !notification.read).length,
   );
   protected readonly displayName = computed(() => this.auth.user()?.fullName?.split(' ')[0] || 'Developer');
+  protected readonly userInitials = computed(() => {
+    const source = this.auth.user()?.fullName || this.auth.user()?.username || 'Developer';
+    return source
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+  });
   protected readonly activeSection = signal<'overview' | 'projects' | 'profile' | 'create' | 'security'>(
     'overview',
   );
+  protected readonly sidebarCollapsed = signal(false);
+  protected readonly profileOpen = signal(false);
 
   protected readonly createProjectForm = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required]],

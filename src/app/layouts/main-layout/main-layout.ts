@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { catchError, forkJoin, of } from 'rxjs';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { CodesyncApiService } from '../../core/services/codesync-api.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { NotificationItem } from '../../shared/models/codesync.models';
 
 @Component({
@@ -15,12 +16,14 @@ import { NotificationItem } from '../../shared/models/codesync.models';
 export class MainLayoutComponent {
   private readonly api = inject(CodesyncApiService);
   private readonly router = inject(Router);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly auth = inject(AuthStateService);
   protected readonly currentPath = signal(this.router.url);
   protected readonly notifications = signal<NotificationItem[]>([]);
   protected readonly unreadCount = signal(0);
   protected readonly notificationsOpen = signal(false);
+  protected readonly profileOpen = signal(false);
   protected readonly gatewayOnline = signal<boolean | null>(null);
   protected readonly showChrome = computed(() => {
     const path = this.currentPath();
@@ -40,6 +43,7 @@ export class MainLayoutComponent {
       if (event instanceof NavigationEnd) {
         this.currentPath.set(event.urlAfterRedirects);
         this.notificationsOpen.set(false);
+        this.profileOpen.set(false);
       }
     });
 
@@ -56,7 +60,13 @@ export class MainLayoutComponent {
   }
 
   protected toggleNotifications(): void {
+    this.profileOpen.set(false);
     this.notificationsOpen.update((value) => !value);
+  }
+
+  protected toggleProfile(): void {
+    this.notificationsOpen.set(false);
+    this.profileOpen.update((value) => !value);
   }
 
   protected markAllNotificationsRead(): void {
@@ -96,6 +106,7 @@ export class MainLayoutComponent {
     this.auth.logout().subscribe({
       next: () => {
         this.notificationsOpen.set(false);
+        this.profileOpen.set(false);
         this.router.navigate(['/']);
       },
     });

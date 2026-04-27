@@ -1,57 +1,123 @@
 <section class="admin-shell">
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" [class.admin-sidebar--collapsed]="sidebarCollapsed()">
     <div class="admin-brand">
       <span class="admin-brand__mark">&lt;/&gt;</span>
-      <div>
-        <strong>CodeSync</strong>
-        <small>Admin panel</small>
-      </div>
+      @if (!sidebarCollapsed()) {
+        <div>
+          <strong>CodeSync</strong>
+          <small>Admin panel</small>
+        </div>
+      }
     </div>
 
     <nav class="admin-nav">
       <button type="button" [class.active]="activeSection() === 'overview'" (click)="activeSection.set('overview')">
-        Dashboard
+        <span class="admin-nav__icon">O</span>
+        @if (!sidebarCollapsed()) {
+          <span>Overview</span>
+        }
       </button>
       <button type="button" [class.active]="activeSection() === 'users'" (click)="activeSection.set('users')">
-        Users
+        <span class="admin-nav__icon">U</span>
+        @if (!sidebarCollapsed()) {
+          <span>Users</span>
+        }
       </button>
       <button type="button" [class.active]="activeSection() === 'projects'" (click)="activeSection.set('projects')">
-        Projects
+        <span class="admin-nav__icon">P</span>
+        @if (!sidebarCollapsed()) {
+          <span>Projects</span>
+        }
       </button>
       <button type="button" [class.active]="activeSection() === 'sessions'" (click)="activeSection.set('sessions')">
-        Sessions
+        <span class="admin-nav__icon">S</span>
+        @if (!sidebarCollapsed()) {
+          <span>Sessions</span>
+        }
       </button>
       <button type="button" [class.active]="activeSection() === 'executions'" (click)="activeSection.set('executions')">
-        Executions
+        <span class="admin-nav__icon">E</span>
+        @if (!sidebarCollapsed()) {
+          <span>Executions</span>
+        }
       </button>
       <button type="button" [class.active]="activeSection() === 'broadcast'" (click)="activeSection.set('broadcast')">
-        Broadcast
+        <span class="admin-nav__icon">B</span>
+        @if (!sidebarCollapsed()) {
+          <span>Broadcast</span>
+        }
       </button>
       <button type="button" [class.active]="activeSection() === 'languages'" (click)="activeSection.set('languages')">
-        Languages
+        <span class="admin-nav__icon">L</span>
+        @if (!sidebarCollapsed()) {
+          <span>Languages</span>
+        }
       </button>
       <button type="button" [class.active]="activeSection() === 'notifications'" (click)="activeSection.set('notifications')">
-        Notifications
+        <span class="admin-nav__icon">N</span>
+        @if (!sidebarCollapsed()) {
+          <span>Notifications</span>
+        }
       </button>
     </nav>
 
     <div class="admin-user">
-      <span class="admin-user__avatar">A</span>
-      <div>
-        <strong>{{ auth.user()?.fullName || 'Admin' }}</strong>
-        <small>{{ auth.user()?.role || 'ADMIN' }}</small>
-      </div>
+      <span class="admin-user__avatar">{{ userInitials() }}</span>
+      @if (!sidebarCollapsed()) {
+        <div>
+          <strong>{{ auth.user()?.fullName || 'Admin' }}</strong>
+          <small>{{ auth.user()?.role || 'ADMIN' }}</small>
+        </div>
+      }
     </div>
   </aside>
 
   <main class="admin-main">
     <section class="admin-header">
-      <div>
-        <h1>Platform overview</h1>
-        <p>Backend-backed admin controls for users, projects, sessions, executions, and notifications.</p>
+      <div class="admin-header__leading">
+        <button class="secondary-action" type="button" (click)="sidebarCollapsed.update((value) => !value)">
+          {{ sidebarCollapsed() ? 'Open menu' : 'Collapse menu' }}
+        </button>
+        <div>
+          <h1>Platform overview</h1>
+          <p>Backend-backed admin controls for users, projects, sessions, executions, and notifications.</p>
+        </div>
       </div>
-      <button class="primary-action" type="button" (click)="activeSection.set('broadcast')">Send broadcast</button>
+
+      <div class="admin-header__actions">
+        <button class="primary-action" type="button" (click)="activeSection.set('broadcast')">Send broadcast</button>
+        <button class="admin-profile-trigger" type="button" (click)="profileOpen.update((value) => !value)">
+          <span class="admin-user__avatar">{{ userInitials() }}</span>
+          <span>{{ auth.user()?.fullName || 'Admin' }}</span>
+        </button>
+      </div>
     </section>
+
+    @if (profileOpen()) {
+      <section class="admin-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Admin identity</p>
+            <h2>{{ auth.user()?.fullName || 'Admin' }}</h2>
+          </div>
+          <button class="secondary-action" type="button" (click)="profileOpen.set(false)">Close</button>
+        </div>
+        <div class="admin-profile-grid">
+          <article class="metric-card">
+            <span>Email</span>
+            <strong>{{ auth.user()?.email }}</strong>
+          </article>
+          <article class="metric-card">
+            <span>Role</span>
+            <strong>{{ auth.user()?.role || 'ADMIN' }}</strong>
+          </article>
+          <article class="metric-card">
+            <span>Total users</span>
+            <strong>{{ users().length }}</strong>
+          </article>
+        </div>
+      </section>
+    }
 
     @if (error()) {
       <p class="status-message status-message--error">{{ error() }}</p>
@@ -417,11 +483,7 @@
             </div>
             <div class="field">
               <label for="notificationRelatedLookup">Related id</label>
-              <input
-                id="notificationRelatedLookup"
-                [(ngModel)]="notificationRelatedLookup"
-                (keyup.enter)="filterNotificationsByRelated()"
-              />
+              <input id="notificationRelatedLookup" [(ngModel)]="notificationRelatedLookup" (keyup.enter)="filterNotificationsByRelated()" />
             </div>
           </div>
 

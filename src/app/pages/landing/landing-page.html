@@ -1,20 +1,41 @@
-<div class="page-shell">
-  <section class="landing-hero glass-card">
+<div class="page-shell landing-page">
+  <section class="landing-hero">
     <div class="landing-hero__copy">
-      <span class="landing-pill">New: live collab sessions now support 20+ participants</span>
-      <h1>Code together. Build faster. Ship smarter.</h1>
+      <div class="landing-hero__eyebrow">
+        <span class="landing-pill">Professional browser-based engineering workspace</span>
+        <span class="landing-status" [class.landing-status--offline]="error()">
+          {{ error() ? 'Gateway offline' : 'Gateway-aware UI' }}
+        </span>
+      </div>
+
+      <h1>Professional collaboration for every part of your coding workflow.</h1>
+
       <p class="landing-lead">
-        A browser-based live editor where teams write, run, and review code in real time with
-        version control, sandboxed execution, inline comments, and collaboration sessions.
+        CodeSync unifies project discovery, live editing, execution, comments, notifications, and
+        admin operations into one clean product surface, so every service feels organized instead
+        of scattered.
       </p>
 
-      <div class="button-row">
+      <div class="button-row landing-hero__actions">
         @if (auth.user()) {
           <a class="primary-action" routerLink="/dashboard">Open dashboard</a>
         } @else {
           <a class="primary-action" routerLink="/register">Start coding free</a>
         }
         <a class="secondary-action" routerLink="/browse">Browse public projects</a>
+      </div>
+
+      <div class="hero-summary">
+        <article class="hero-summary__card">
+          <span>Workspace model</span>
+          <strong>Projects, files, comments, sessions</strong>
+          <p>Structured around the same entities your backend already exposes.</p>
+        </article>
+        <article class="hero-summary__card">
+          <span>Visual direction</span>
+          <strong>Clear sections with strong hierarchy</strong>
+          <p>Built to feel closer to a polished SaaS product than a student dashboard.</p>
+        </article>
       </div>
     </div>
 
@@ -25,49 +46,70 @@
           <span></span>
           <span></span>
         </div>
-        <strong>{{ featuredProjects()[0]?.name || 'main.java' }} - CodeSync Editor</strong>
+        <strong>{{ featuredProjects()[0]?.name || 'workspace.java' }} - CodeSync Workspace</strong>
+        <span class="editor-preview__state">Live architecture view</span>
       </header>
 
       <div class="editor-preview__body">
         <aside class="editor-panel">
-          <span class="editor-panel__label">Project files</span>
+          <span class="editor-panel__label">Workspace map</span>
           <ul class="editor-file-list">
-            <li class="active">{{ featuredProjects()[0]?.language || 'Main' }}.java</li>
-            <li>Utils.java</li>
-            <li>models/</li>
-            <li>Project.java</li>
+            <li class="active">project-service/</li>
+            <li>workspace/Main.java</li>
+            <li>comments/review-thread.ts</li>
+            <li>snapshots/release-tag.md</li>
+            <li>execution/runtime.json</li>
           </ul>
         </aside>
 
         <div class="editor-code">
-          <pre>public class Main &#123;
-  public static void main(String[] args) &#123;
-    System.out.println("Hello, CodeSync");
-  &#125;
-&#125;</pre>
+          <pre><span class="editor-code__keyword">workspace</span>.<span class="editor-code__method">sync</span>(<span class="editor-code__string">'review-ready'</span>, &#123;
+  <span class="editor-code__type">project</span>: <span class="editor-code__string">'codesync-platform'</span>,
+  <span class="editor-code__type">services</span>: [<span class="editor-code__string">'auth'</span>, <span class="editor-code__string">'projects'</span>, <span class="editor-code__string">'files'</span>, <span class="editor-code__string">'execution'</span>],
+  <span class="editor-code__type">collaborators</span>: <span class="editor-code__string">'online'</span>,
+  <span class="editor-code__type">status</span>: <span class="editor-code__string">'ready to ship'</span>
+&#125;);</pre>
+
+          <div class="editor-code__footer">
+            <div>
+              <span>Reviews</span>
+              <strong>Inline threads</strong>
+            </div>
+            <div>
+              <span>Snapshots</span>
+              <strong>Restore safely</strong>
+            </div>
+            <div>
+              <span>Runtimes</span>
+              <strong>{{ languages().length || 7 }} configured</strong>
+            </div>
+          </div>
         </div>
 
         <aside class="editor-panel editor-panel--right">
-          <span class="editor-panel__label">Collaborators</span>
+          <span class="editor-panel__label">Control signals</span>
+
           <div class="collaborator-pill">
-            <span class="avatar avatar--violet">AK</span>
+            <span class="avatar avatar--violet">GW</span>
             <div>
-              <strong>Alice</strong>
-              <small>editing</small>
+              <strong>Gateway health</strong>
+              <small>{{ error() ? 'needs attention' : 'routing requests' }}</small>
             </div>
           </div>
+
           <div class="collaborator-pill">
-            <span class="avatar avatar--green">BM</span>
+            <span class="avatar avatar--green">PJ</span>
             <div>
-              <strong>Bob</strong>
-              <small>online</small>
+              <strong>Workspace state</strong>
+              <small>{{ projects().length || 0 }} public repositories visible</small>
             </div>
           </div>
+
           <div class="collaborator-pill">
-            <span class="avatar avatar--orange">CR</span>
+            <span class="avatar avatar--orange">RT</span>
             <div>
-              <strong>Carol</strong>
-              <small>reviewing</small>
+              <strong>Execution support</strong>
+              <small>{{ languages().length || 7 }} language profiles ready</small>
             </div>
           </div>
         </aside>
@@ -76,30 +118,64 @@
   </section>
 
   <section class="feature-strip">
-    <article class="feature-card section-card">
-      <span class="feature-icon">○</span>
-      <h2>Real-time co-editing</h2>
-      <p class="muted">See teammate cursors and edits instantly during shared sessions.</p>
+    <article class="feature-card">
+      <span class="feature-icon feature-icon--violet">RT</span>
+      <h2>Real-time collaboration</h2>
+      <p class="muted">Keep live sessions, member presence, and file edits synchronized without losing context.</p>
     </article>
 
-    <article class="feature-card section-card">
-      <span class="feature-icon">▣</span>
-      <h2>Run code in sandbox</h2>
-      <p class="muted">Execute supported languages through the execution service.</p>
+    <article class="feature-card">
+      <span class="feature-icon feature-icon--green">EX</span>
+      <h2>Execution with guardrails</h2>
+      <p class="muted">Run supported languages through dedicated backend execution flows and surface job history clearly.</p>
     </article>
 
-    <article class="feature-card section-card">
-      <span class="feature-icon">↥</span>
-      <h2>Version snapshots</h2>
-      <p class="muted">Commit, diff, tag, and restore file history without leaving the editor.</p>
+    <article class="feature-card">
+      <span class="feature-icon feature-icon--orange">VR</span>
+      <h2>Reviewable version history</h2>
+      <p class="muted">Tag, diff, restore, and branch from snapshots without leaving the browser workspace.</p>
     </article>
+  </section>
+
+  <section class="section-card landing-services" id="services">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Service map</p>
+        <h2>Every backend capability gets a clear place in the UI.</h2>
+      </div>
+      <p class="landing-section-copy">
+        The strongest product sites group complex capability into readable lanes. This section
+        mirrors that pattern for your platform services.
+      </p>
+    </div>
+
+    <div class="service-grid">
+      @for (service of platformServices; track service.title) {
+        <article class="service-card">
+          <span class="tag">{{ service.label }}</span>
+          <h3>{{ service.title }}</h3>
+          <p>{{ service.description }}</p>
+          <small>{{ service.detail }}</small>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="landing-workflow">
+    @for (step of workflowSteps; track step.step) {
+      <article class="workflow-card">
+        <span class="workflow-card__step">{{ step.step }}</span>
+        <h2>{{ step.title }}</h2>
+        <p>{{ step.description }}</p>
+      </article>
+    }
   </section>
 
   <section class="landing-stats section-card">
     <div class="section-heading">
       <div>
         <p class="eyebrow">Platform overview</p>
-        <h2>Backend-backed features for every actor.</h2>
+        <h2>Organized entry points for guests, developers, and admins.</h2>
       </div>
     </div>
 
@@ -113,37 +189,44 @@
       <div class="landing-stats__grid">
         <article class="metric-card">
           <strong>{{ projects().length }}</strong>
-          <span>public projects</span>
+          <span>public workspaces ready to explore</span>
         </article>
         <article class="metric-card">
           <strong>{{ languages().length }}</strong>
-          <span>supported languages</span>
+          <span>runtime configurations surfaced in the product</span>
         </article>
         <article class="metric-card">
           <strong>3</strong>
-          <span>actor roles: guest, developer, admin</span>
+          <span>actor lanes with distinct responsibilities</span>
         </article>
       </div>
 
       <div class="landing-roles">
         <article class="role-card">
           <span class="tag">Guest</span>
-          <h3>Discover public projects</h3>
-          <p>Browse, filter, and inspect public repositories before signing in.</p>
+          <h3>Discover with confidence</h3>
+          <p>Browse public repositories, filter by language, and understand project quality before signing in.</p>
         </article>
         <article class="role-card">
           <span class="tag">Developer</span>
-          <h3>Build, review, and collaborate</h3>
-          <p>Create projects, edit files, run code, comment inline, and manage snapshots.</p>
+          <h3>Build, review, and execute</h3>
+          <p>Create workspaces, edit files, run code, comment inline, and manage snapshots from one cockpit.</p>
         </article>
         <article class="role-card">
           <span class="tag">Admin</span>
           <h3>Operate the platform</h3>
-          <p>Manage users, languages, execution traffic, broadcasts, and active sessions.</p>
+          <p>Manage users, languages, execution traffic, broadcasts, and active sessions from a dedicated control layer.</p>
         </article>
       </div>
 
       @if (featuredProjects().length) {
+        <div class="section-heading section-heading--tight">
+          <div>
+            <p class="eyebrow">Public projects</p>
+            <h3>Featured workspaces</h3>
+          </div>
+        </div>
+
         <div class="featured-projects">
           @for (project of featuredProjects(); track project.projectId) {
             <article class="featured-project">
@@ -157,9 +240,7 @@
                 <span>{{ project.forkCount }} forks</span>
                 <span>{{ project.visibility }}</span>
               </div>
-              <a class="secondary-action" [routerLink]="['/projects', project.projectId]">
-                Open workspace
-              </a>
+              <a class="secondary-action" [routerLink]="['/projects', project.projectId]">Open workspace</a>
             </article>
           }
         </div>

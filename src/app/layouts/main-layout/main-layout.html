@@ -1,25 +1,40 @@
 <div class="app-shell">
   @if (showChrome()) {
     <header class="shell-header">
-      <a class="brand" routerLink="/">
-        <span class="brand-mark">&lt;/&gt;</span>
-        <strong>CodeSync</strong>
-      </a>
+      <div class="shell-header__primary">
+        <a class="brand" routerLink="/">
+          <span class="brand-mark">&lt;/&gt;</span>
+          <span class="brand-copy">
+            <strong>CodeSync</strong>
+            <small>Collaborative engineering workspace</small>
+          </span>
+        </a>
 
-      <nav class="shell-nav" aria-label="Primary navigation">
-        <a routerLink="/" [class.active]="isCurrent('/')">Home</a>
-        <a routerLink="/browse" routerLinkActive="active">Browse</a>
-        <a [routerLink]="['/browse']" [queryParams]="{ language: 'java' }">Languages</a>
-        @if (auth.user()) {
-          <a routerLink="/dashboard" routerLinkActive="active">My Projects</a>
-        }
-      </nav>
+        <nav class="shell-nav" aria-label="Primary navigation">
+          <a routerLink="/" [class.active]="isCurrent('/')">Home</a>
+          <a routerLink="/browse" routerLinkActive="active">Browse</a>
+          <a routerLink="/" fragment="services">Services</a>
+          @if (auth.user()) {
+            <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+          }
+        </nav>
+      </div>
 
       <div class="shell-actions">
+        <span class="shell-status" [class.shell-status--offline]="gatewayOnline() === false">
+          {{
+            gatewayOnline() === true
+              ? 'Gateway online'
+              : gatewayOnline() === false
+                ? 'Gateway offline'
+                : 'Gateway checking'
+          }}
+        </span>
+
         @if (auth.user(); as user) {
           <div class="notification-wrap">
             <button class="top-action top-action--ghost" type="button" (click)="toggleNotifications()">
-              {{ initials(user.fullName, user.username) }}
+              Notifications
               @if (unreadCount() > 0) {
                 <span class="badge">{{ unreadCount() }}</span>
               }
@@ -59,6 +74,52 @@
             }
           </div>
 
+          <div class="notification-wrap">
+            <button class="profile-chip" type="button" (click)="toggleProfile()">
+              <span class="profile-chip__avatar">{{ initials(user.fullName, user.username) }}</span>
+              <span class="profile-chip__label">{{ user.fullName || user.username }}</span>
+            </button>
+
+            @if (profileOpen()) {
+              <section class="floating-panel floating-panel--profile">
+                <div class="profile-panel__head">
+                  <span class="profile-panel__avatar">{{ initials(user.fullName, user.username) }}</span>
+                  <div>
+                    <strong>{{ user.fullName || user.username }}</strong>
+                    <p>@{{ user.username }}</p>
+                  </div>
+                </div>
+
+                <div class="profile-panel__meta">
+                  <span class="tag">{{ user.role }}</span>
+                  <span class="tag">{{ user.provider || 'LOCAL' }}</span>
+                  <span class="tag">
+                    {{
+                      gatewayOnline() === true
+                        ? 'Gateway online'
+                        : gatewayOnline() === false
+                          ? 'Gateway offline'
+                          : 'Gateway checking'
+                    }}
+                  </span>
+                </div>
+
+                <div class="profile-panel__body">
+                  <p>{{ user.email }}</p>
+                  <p>{{ user.bio || 'Add a bio from your dashboard profile settings.' }}</p>
+                </div>
+
+                <div class="button-row">
+                  <a class="secondary-action" routerLink="/dashboard">Dashboard</a>
+                  @if (auth.isAdmin()) {
+                    <a class="secondary-action" routerLink="/admin">Admin</a>
+                  }
+                  <button class="primary-action" type="button" (click)="logout()">Log out</button>
+                </div>
+              </section>
+            }
+          </div>
+
           @if (auth.isAdmin()) {
             <a class="top-action top-action--ghost" routerLink="/admin">Admin</a>
           }
@@ -72,6 +133,10 @@
     </header>
   }
 
+  <button class="theme-toggle" type="button" (click)="theme.toggleTheme()">
+    {{ theme.theme() === 'light' ? 'Dark mode' : 'Light mode' }}
+  </button>
+
   <main class="shell-content" [class.shell-content--app]="!showChrome()">
     <router-outlet></router-outlet>
   </main>
@@ -82,13 +147,14 @@
         <span class="brand-mark">&lt;/&gt;</span>
         <div>
           <strong>CodeSync</strong>
-          <small>Browser-based code collaboration for guests, developers, and admins.</small>
+          <small>Organized collaboration for guests, developers, and platform operators.</small>
         </div>
       </div>
 
       <div class="shell-footer__links">
         <a routerLink="/">Home</a>
         <a routerLink="/browse">Browse</a>
+        <a routerLink="/" fragment="services">Services</a>
         @if (auth.user()) {
           <a routerLink="/dashboard">Dashboard</a>
         } @else {

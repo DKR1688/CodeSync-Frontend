@@ -2,9 +2,7 @@
   display: grid;
   min-height: 100vh;
   grid-template-columns: minmax(0, 1.06fr) minmax(340px, 0.94fr);
-  background:
-    radial-gradient(circle at top right, rgba(110, 90, 255, 0.16), transparent 24%),
-    #232327;
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
 }
 
 .auth-showcase,
@@ -14,13 +12,16 @@
 
 .auth-showcase {
   display: grid;
-  align-content: space-between;
-  gap: 26px;
-  padding: 48px;
-  background: #efefff;
-  color: #161944;
+  align-content: center;
+  gap: 34px;
+  padding: 56px 64px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 14%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 98%, transparent), color-mix(in srgb, var(--surface-muted) 93%, transparent));
+  color: var(--text);
   position: relative;
   overflow: hidden;
+  border-right: 1px solid var(--line);
 }
 
 .auth-showcase::after {
@@ -28,25 +29,25 @@
   position: absolute;
   right: -80px;
   bottom: -80px;
-  width: 220px;
-  height: 220px;
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(110, 90, 255, 0.16), transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 68%);
 }
 
 .auth-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #161944;
+  color: var(--text);
 }
 
 .auth-brand__mark {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   background: var(--accent);
   color: #ffffff;
   font-size: 0.72rem;
@@ -55,20 +56,22 @@
 
 .auth-copy {
   display: grid;
-  gap: 20px;
+  gap: 24px;
+  align-content: center;
+  max-width: 38rem;
 }
 
 .auth-copy h1 {
   margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: clamp(2.3rem, 4vw, 3.3rem);
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4vw, 3rem);
   line-height: 1.1;
 }
 
 .auth-copy p {
   margin: 0;
   max-width: 38ch;
-  color: rgba(22, 25, 68, 0.78);
+  color: var(--muted);
   line-height: 1.8;
 }
 
@@ -76,22 +79,53 @@
   display: grid;
   gap: 12px;
   margin: 0;
-  padding-left: 20px;
+  padding: 0;
+  list-style: none;
 }
 
 .auth-list li {
-  color: rgba(22, 25, 68, 0.86);
+  position: relative;
+  padding: 14px 16px 14px 38px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text);
   line-height: 1.5;
+}
+
+.auth-list li::before {
+  content: '';
+  position: absolute;
+  top: 1.1rem;
+  left: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .auth-panel {
   display: grid;
   align-content: center;
-  gap: 18px;
-  padding: 48px;
-  max-width: 420px;
+  align-items: center;
+  padding: 48px 56px;
+  max-width: 500px;
   width: 100%;
   margin: 0 auto;
+  background: transparent;
+}
+
+.auth-panel__inner {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 98%, transparent), color-mix(in srgb, var(--surface-muted) 93%, transparent)),
+    var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .auth-toggle {
@@ -100,7 +134,7 @@
   padding: 4px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface);
 }
 
 .auth-toggle a {
@@ -109,10 +143,13 @@
   justify-content: center;
   min-height: 42px;
   border-radius: 9px;
-  color: #d0c8bc;
-  font-family: 'Space Grotesk', sans-serif;
+  color: var(--color-text-secondary);
+  font-family: var(--font-display);
   font-weight: 700;
-  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
 .auth-toggle a.active {
@@ -129,12 +166,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   min-height: 48px;
   padding: 12px 16px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: transparent;
-  font-family: 'Space Grotesk', sans-serif;
+  background: var(--surface);
+  font-family: var(--font-display);
   font-weight: 700;
   transition:
     transform 160ms ease,
@@ -145,7 +183,19 @@
 .oauth-button:hover {
   transform: translateY(-2px);
   border-color: var(--accent-strong);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--accent-soft);
+}
+
+.oauth-button__icon {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.7rem;
 }
 
 .auth-divider {
@@ -166,11 +216,19 @@
   position: relative;
   display: inline-block;
   padding: 0 10px;
-  background: #232327;
+  background: var(--surface);
+}
+
+.auth-hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.6;
 }
 
 .auth-submit {
   width: 100%;
+  margin-top: 4px;
 }
 
 .auth-footnote {

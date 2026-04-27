@@ -21,10 +21,18 @@ export class RegisterPageComponent {
 
   protected readonly form = this.formBuilder.nonNullable.group({
     fullName: ['', [Validators.required]],
-    username: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
   });
+  protected suggestedUsername(): string {
+    const fullName = this.form.controls.fullName.value.trim().toLowerCase();
+    const email = this.form.controls.email.value.trim().toLowerCase();
+    const emailLocal = email.split('@')[0]?.replace(/[^a-z0-9]+/g, '') || '';
+    const fullNameBase = fullName.replace(/[^a-z0-9]+/g, '');
+    const base = emailLocal || fullNameBase || 'codesyncuser';
+
+    return base.slice(0, 18);
+  }
 
   protected submit(): void {
     if (this.form.invalid) {
@@ -33,9 +41,14 @@ export class RegisterPageComponent {
     }
 
     this.error.set(null);
-    this.auth.register(this.form.getRawValue()).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
-      error: () => this.error.set(this.auth.error() || 'Registration failed.'),
-    });
+    this.auth
+      .register({
+        ...this.form.getRawValue(),
+        username: this.suggestedUsername(),
+      })
+      .subscribe({
+        next: () => this.router.navigate(['/dashboard']),
+        error: () => this.error.set(this.auth.error() || 'Registration failed.'),
+      });
   }
 }

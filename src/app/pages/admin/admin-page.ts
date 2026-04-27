@@ -38,6 +38,16 @@ export class AdminPageComponent {
   protected readonly stats = signal<ExecutionStats | null>(null);
   protected readonly notifications = signal<NotificationItem[]>([]);
   protected readonly editingLanguage = signal<string | null>(null);
+  protected readonly sidebarCollapsed = signal(false);
+  protected readonly profileOpen = signal(false);
+  protected readonly userInitials = computed(() => {
+    const source = this.auth.user()?.fullName || this.auth.user()?.username || 'Admin';
+    return source
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+  });
   protected readonly recentUsers = computed(() =>
     [...this.users()].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, 5),
   );
