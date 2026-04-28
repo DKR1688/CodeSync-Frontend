@@ -339,7 +339,7 @@ export class AdminPageComponent {
       sourceFileName: '',
       runCommand: '',
       enabled: true,
-      defaultTimeLimitSeconds: 10,
+      defaultTimeLimitSeconds: 20,
       defaultMemoryLimitMb: 256,
     };
   }

@@ -387,14 +387,24 @@ export class WorkspacePageComponent {
       return;
     }
 
+    const language = file.language || project.language || 'java';
+    if (!this.executionInput.length && this.codeLikelyNeedsStdin(language, this.editorContent())) {
+      this.error.set(
+        'This code looks like it reads console input. Add values in Execution stdin before running, or press Enter once there if you want to send an empty line.',
+      );
+      return;
+    }
+
+    this.error.set(null);
+
     this.api
       .submitExecution({
         projectId: project.projectId,
         fileId: file.fileId,
-        language: file.language || project.language || 'java',
+        language,
         sourceCode: this.editorContent(),
         stdin: this.executionInput,
-        timeLimitSeconds: 10,
+        timeLimitSeconds: 20,
         memoryLimitMb: 256,
         cpuLimit: 1,
       })
@@ -979,6 +989,42 @@ export class WorkspacePageComponent {
           this.pollExecution(jobId);
         }
       });
+  }
+
+  private codeLikelyNeedsStdin(language: string, sourceCode: string): boolean {
+    const normalizedLanguage = language.trim().toLowerCase();
+    const code = sourceCode ?? '';
+
+    switch (normalizedLanguage) {
+      case 'java':
+        return /\bScanner\b|\bBufferedReader\b|\bConsole\b|\bSystem\.in\b/.test(code);
+      case 'python':
+        return /\binput\s*\(/.test(code);
+      case 'javascript':
+      case 'typescript':
+        return /\bprompt\s*\(|process\.stdin|createInterface\s*\(|readline\b/.test(code);
+      case 'c':
+        return /\bscanf\s*\(|\bfgets\s*\(|\bgetchar\s*\(|\bread\s*\(/.test(code);
+      case 'cpp':
+      case 'c++':
+        return /\bcin\b|\bgetline\s*\(|\bscanf\s*\(|\bfgets\s*\(/.test(code);
+      case 'go':
+        return /\bfmt\.(Scan|Scanln|Scanf)\b|\bbufio\.NewScanner\b|\bReadString\s*\(/.test(code);
+      case 'rust':
+        return /\bstdin\s*\(\)|read_line\s*\(/.test(code);
+      case 'ruby':
+        return /\bgets\b|STDIN\.gets/.test(code);
+      case 'php':
+        return /\bfgets\s*\(\s*STDIN\b|\breadline\s*\(/.test(code);
+      case 'kotlin':
+        return /\breadLine\s*\(|\breadln\s*\(/.test(code);
+      case 'swift':
+        return /\breadLine\s*\(/.test(code);
+      case 'r':
+        return /\bscan\s*\(|\breadLines\s*\(|\breadline\s*\(/.test(code);
+      default:
+        return /\bstdin\b|\bSystem\.in\b|\binput\s*\(|\bscanf\s*\(|\bcin\b|\breadLine\s*\(|\breadln\s*\(/.test(code);
+    }
   }
 
   private normalizePath(path: string): string {

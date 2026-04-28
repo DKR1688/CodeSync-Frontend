@@ -245,6 +245,10 @@
                     <div class="field">
                       <label for="stdin">Execution stdin</label>
                       <textarea id="stdin" [(ngModel)]="executionInput" placeholder="Optional input"></textarea>
+                      <p class="workspace-output__hint">
+                        Add console input here for programs that use `Scanner`, `input()`, `cin`, `scanf`, or `readLine()`.
+                        If you want to send an empty line intentionally, press Enter once in this box before you run.
+                      </p>
                     </div>
 
                     @if (executionResult(); as result) {
