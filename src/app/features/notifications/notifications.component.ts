@@ -10,7 +10,7 @@ import { Notification } from '../../core/models';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './notifications.component.html',
-  styleUrl: './notifications.component.scss'
+  styleUrl: './notifications.component.css'
 })
 export class NotificationsComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);

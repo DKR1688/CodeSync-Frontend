@@ -13,7 +13,7 @@ import { User } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './navbar.component.html',
-  styleUrl: './navbar.component.scss'
+  styleUrl: './navbar.component.css'
 })
 export class NavbarComponent implements OnInit {
   auth = inject(AuthService);

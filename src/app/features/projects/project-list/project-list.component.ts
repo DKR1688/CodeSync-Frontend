@@ -11,7 +11,7 @@ import { Project } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './project-list.component.html',
-  styleUrl: './project-list.component.scss'
+  styleUrl: './project-list.component.css'
 })
 export class ProjectListComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);

@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { VersionService } from '../../core/services/version.service';
 import { Snapshot, DiffResult } from '../../core/models';
@@ -10,7 +11,7 @@ import { Snapshot, DiffResult } from '../../core/models';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './version-history.component.html',
-  styleUrl: './version-history.component.scss'
+  styleUrl: './version-history.component.css'
 })
 export class VersionHistoryComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);
@@ -29,6 +30,9 @@ export class VersionHistoryComponent implements OnInit {
   tagInput: Record<string, string> = {};
   newBranch = '';
   showBranchModal = false;
+  creatingBranch = false;
+  branchError = '';
+  readonly branchPattern = /^[A-Za-z0-9._/-]+$/;
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.paramMap.get('id')!;
@@ -102,13 +106,53 @@ export class VersionHistoryComponent implements OnInit {
   }
 
   createBranch(): void {
+    const branchName = this.newBranch.trim();
     const sourceSnapshotId = this.selectedA?.snapshotId || this.snapshots[0]?.snapshotId;
-    if (!this.newBranch.trim() || !sourceSnapshotId) return;
-    this.versionService.createBranch(String(sourceSnapshotId), this.newBranch).subscribe(() => {
-      this.showBranchModal = false;
-      this.newBranch = '';
+    if (!branchName || !sourceSnapshotId || this.creatingBranch) return;
+    if (!this.branchPattern.test(branchName)) {
+      this.branchError = 'Use letters, numbers, ".", "-", "_" or "/" only.';
       this.syncView();
+      return;
+    }
+
+    this.creatingBranch = true;
+    this.branchError = '';
+    this.versionService.createBranch(sourceSnapshotId, branchName).subscribe({
+      next: (branchHead) => {
+        this.snapshots.unshift(branchHead);
+        this.selectedA = branchHead;
+        this.selectedB = undefined;
+        this.diffResult = undefined;
+        this.activeTab = 'history';
+        this.showBranchModal = false;
+        this.newBranch = '';
+        this.creatingBranch = false;
+        this.syncView();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.creatingBranch = false;
+        this.branchError = this.getBranchErrorMessage(error);
+        this.syncView();
+      }
     });
+  }
+
+  openBranchModal(): void {
+    this.branchError = '';
+    this.newBranch = '';
+    this.creatingBranch = false;
+    this.showBranchModal = true;
+  }
+
+  closeBranchModal(): void {
+    this.showBranchModal = false;
+    this.newBranch = '';
+    this.branchError = '';
+    this.creatingBranch = false;
+  }
+
+  getBranchSourceLabel(): string {
+    return this.selectedA?.message || this.snapshots[0]?.message || 'latest snapshot';
   }
 
   getTimeAgo(d: string): string {
@@ -125,6 +169,20 @@ export class VersionHistoryComponent implements OnInit {
 
   getDiffPrefix(type: string): string {
     return type === 'ADDED' ? '+' : type === 'REMOVED' ? '-' : ' ';
+  }
+
+  private getBranchErrorMessage(error: HttpErrorResponse): string {
+    const payload = error.error;
+    if (typeof payload === 'string' && payload.trim()) {
+      return payload;
+    }
+    if (payload?.message) {
+      return payload.message;
+    }
+    if (payload?.error) {
+      return payload.error;
+    }
+    return 'Unable to create the branch right now. Please try again.';
   }
 
   private syncView(): void {

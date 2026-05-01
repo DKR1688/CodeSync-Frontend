@@ -13,7 +13,7 @@ import { catchError, forkJoin, of } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);
@@ -28,6 +28,7 @@ export class DashboardComponent implements OnInit {
   recentNotifications: Notification[] = [];
   loading = true;
   stats = { projects: 0, executions: 0, unread: 0 };
+  collaboratorCount = 0;
 
   LANGS: Record<string, string> = {
     python: '#3572a5', javascript: '#f1e05a', typescript: '#3178c6',
@@ -55,6 +56,7 @@ export class DashboardComponent implements OnInit {
         this.recentNotifications = notifications.slice(0, 5);
         this.stats.projects = myProjects.length;
         this.stats.unread = notifications.filter(n => !n.isRead).length;
+        this.collaboratorCount = this.myProjects.reduce((total, project) => total + project.memberUserIds.length, 0);
         this.loading = false;
         this.syncView();
       },

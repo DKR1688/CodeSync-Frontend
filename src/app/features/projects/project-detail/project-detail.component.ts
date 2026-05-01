@@ -14,7 +14,7 @@ import { catchError } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './project-detail.component.html',
-  styleUrl: './project-detail.component.scss'
+  styleUrl: './project-detail.component.css'
 })
 export class ProjectDetailComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);

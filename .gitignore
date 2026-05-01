@@ -10,6 +10,11 @@
 /node_modules
 npm-debug.log
 yarn-error.log
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+.npm/
+.pnpm-store/
 
 # IDEs and editors
 .idea/
@@ -31,6 +36,7 @@ yarn-error.log
 
 # Miscellaneous
 /.angular/cache
+.cache/
 .sass-cache/
 /connect.lock
 /coverage
@@ -38,6 +44,15 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
+verification-*.png
+.eslintcache
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # System files
 .DS_Store

@@ -13,7 +13,7 @@ import { Subscription } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './collaboration.component.html',
-  styleUrl: './collaboration.component.scss'
+  styleUrl: './collaboration.component.css'
 })
 export class CollaborationComponent implements OnInit, OnDestroy {
   cdr = inject(ChangeDetectorRef);

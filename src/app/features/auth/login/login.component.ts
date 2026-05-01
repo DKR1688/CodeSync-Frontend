@@ -12,7 +12,7 @@ import { finalize } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.css'
 })
 export class LoginComponent {
   fb = inject(FormBuilder);

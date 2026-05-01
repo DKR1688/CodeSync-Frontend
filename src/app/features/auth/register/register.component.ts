@@ -11,7 +11,7 @@ import { finalize } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.scss'
+  styleUrl: './register.component.css'
 })
 export class RegisterComponent {
   fb = inject(FormBuilder);

@@ -34,8 +34,8 @@ export class VersionService {
     return this.http.get<DiffResult>(`${this.baseUrl}/diff?fromSnapshotId=${id1}&toSnapshotId=${id2}`);
   }
 
-  createBranch(sourceSnapshotId: EntityId, name: string, message?: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/branches`, {
+  createBranch(sourceSnapshotId: EntityId, name: string, message?: string): Observable<Snapshot> {
+    return this.http.post<Snapshot>(`${this.baseUrl}/branches`, {
       sourceSnapshotId,
       branch: name,
       message

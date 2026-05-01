@@ -11,7 +11,7 @@ import { SupportedLanguage } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './project-create.component.html',
-  styleUrl: './project-create.component.scss'
+  styleUrl: './project-create.component.css'
 })
 export class ProjectCreateComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);

@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './landing.component.html',
-  styleUrl: './landing.component.scss'
+  styleUrl: './landing.component.css'
 })
 export class LandingComponent {
   features = [

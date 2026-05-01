@@ -6,7 +6,7 @@
       <p class="page-subtitle">Snapshots and diffs for this file.</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary" (click)="showBranchModal = true">
+      <button class="btn btn-secondary" (click)="openBranchModal()" [disabled]="loading || snapshots.length === 0">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
         New Branch
       </button>
@@ -64,7 +64,7 @@
             <h4 class="snapshot-message">{{ s.message }}</h4>
             <div class="snapshot-info">
               <span class="badge badge-muted">{{ s.branch || 'main' }}</span>
-              <span class="snapshot-hash text-mono">{{ s.hash?.slice(0, 8) }}</span>
+              <span class="snapshot-hash text-mono">{{ s.hash.slice(0, 8) }}</span>
               <span>{{ getTimeAgo(s.createdAt) }}</span>
               <span class="badge badge-accent" *ngIf="s.tag">🏷 {{ s.tag }}</span>
             </div>
@@ -91,7 +91,7 @@
         <!-- Content preview -->
         <details class="snapshot-preview">
           <summary>View content</summary>
-          <pre class="preview-code">{{ s.content?.slice(0, 500) }}{{ (s.content?.length || 0) > 500 ? '\n...' : '' }}</pre>
+          <pre class="preview-code">{{ s.content.slice(0, 500) }}{{ s.content.length > 500 ? '\n...' : '' }}</pre>
         </details>
       </div>
     </div>
@@ -104,13 +104,13 @@
         <div class="diff-snapshot-a">
           <span class="badge badge-danger">A</span>
           <strong>{{ selectedA.message }}</strong>
-          <span class="text-mono" style="font-size:0.75rem;color:var(--text-muted)">{{ selectedA.hash?.slice(0,8) }}</span>
+          <span class="text-mono" style="font-size:0.75rem;color:var(--text-muted)">{{ selectedA.hash.slice(0,8) }}</span>
         </div>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         <div class="diff-snapshot-b">
           <span class="badge badge-success">B</span>
           <strong>{{ selectedB.message }}</strong>
-          <span class="text-mono" style="font-size:0.75rem;color:var(--text-muted)">{{ selectedB.hash?.slice(0,8) }}</span>
+          <span class="text-mono" style="font-size:0.75rem;color:var(--text-muted)">{{ selectedB.hash.slice(0,8) }}</span>
         </div>
       </div>
       <button class="btn btn-ghost btn-sm" (click)="clearDiff()">Clear diff</button>
@@ -137,19 +137,23 @@
 </div>
 
 <!-- Branch Modal -->
-<div class="modal-overlay" *ngIf="showBranchModal" (click)="showBranchModal = false">
+<div class="modal-overlay" *ngIf="showBranchModal" (click)="closeBranchModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Create Branch</h3>
-      <button class="btn btn-ghost btn-icon btn-sm" (click)="showBranchModal = false">✕</button>
+      <button class="btn btn-ghost btn-icon btn-sm" (click)="closeBranchModal()">✕</button>
     </div>
+    <p class="branch-source">Creating from <strong>{{ getBranchSourceLabel() }}</strong>.</p>
     <div class="form-group" style="margin-top:0.5rem">
       <label class="form-label">Branch Name</label>
-      <input type="text" [(ngModel)]="newBranch" class="form-input" placeholder="feature/my-feature" (keyup.enter)="createBranch()">
+      <input type="text" [(ngModel)]="newBranch" class="form-input" placeholder="feature/my-feature" (ngModelChange)="branchError = ''" (keyup.enter)="createBranch()">
     </div>
+    <p class="branch-error" *ngIf="branchError">{{ branchError }}</p>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="showBranchModal = false">Cancel</button>
-      <button class="btn btn-primary" (click)="createBranch()" [disabled]="!newBranch.trim()">Create</button>
+      <button class="btn btn-secondary" (click)="closeBranchModal()" [disabled]="creatingBranch">Cancel</button>
+      <button class="btn btn-primary" (click)="createBranch()" [disabled]="!newBranch.trim() || creatingBranch">
+        {{ creatingBranch ? 'Creating...' : 'Create' }}
+      </button>
     </div>
   </div>
 </div>

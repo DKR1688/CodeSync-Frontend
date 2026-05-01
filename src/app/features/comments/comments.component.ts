@@ -10,7 +10,7 @@ import { Comment, EntityId } from '../../core/models';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './comments.component.html',
-  styleUrl: './comments.component.scss'
+  styleUrl: './comments.component.css'
 })
 export class CommentsComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);

@@ -11,7 +11,7 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './profile.component.html',
-  styleUrl: './profile.component.scss'
+  styleUrl: './profile.component.css'
 })
 export class ProfileComponent implements OnInit {
   fb = inject(FormBuilder);

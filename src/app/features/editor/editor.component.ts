@@ -19,7 +19,7 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './editor.component.html',
-  styleUrl: './editor.component.scss'
+  styleUrl: './editor.component.css'
 })
 export class EditorComponent implements OnInit, OnDestroy {
   cdr = inject(ChangeDetectorRef);
