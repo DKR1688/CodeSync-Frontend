@@ -1,0 +1,66 @@
+<div class="page-container fade-in" style="max-width:800px">
+  <div class="page-header">
+    <div>
+      <h1>Notifications</h1>
+      <p class="page-subtitle">{{ unreadCount }} unread · {{ notifications.length }} total</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" (click)="filter = filter === 'all' ? 'unread' : 'all'">
+        {{ filter === 'all' ? 'Show unread' : 'Show all' }}
+      </button>
+      <button class="btn btn-secondary" (click)="markAllRead()" [disabled]="unreadCount === 0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        Mark all read
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="notif-list">
+    <div *ngFor="let i of [1,2,3,4,5]" class="card notif-skeleton">
+      <div style="display:flex;gap:1rem;align-items:center">
+        <div class="skeleton" style="width:44px;height:44px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="height:16px;width:60%;margin-bottom:0.5rem"></div>
+          <div class="skeleton" style="height:13px;width:80%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && filtered.length === 0" class="empty-state">
+    <div class="empty-icon">🔔</div>
+    <h3>{{ filter === 'unread' ? 'All caught up!' : 'No notifications' }}</h3>
+    <p>{{ filter === 'unread' ? 'You have no unread notifications.' : 'You\'ll be notified when collaborators act on your projects.' }}</p>
+  </div>
+
+  <div class="notif-list" *ngIf="!loading && filtered.length > 0">
+    <div *ngFor="let n of filtered"
+         class="notif-card card"
+         [class.unread]="!n.isRead"
+         (click)="markRead(n)">
+
+      <div class="notif-icon" [style.background]="COLORS[n.type] + '22'" [style.border-color]="COLORS[n.type] + '44'">
+        {{ ICONS[n.type] || '🔔' }}
+      </div>
+
+      <div class="notif-content">
+        <div class="notif-title">{{ n.title }}</div>
+        <div class="notif-msg">{{ n.message }}</div>
+        <div class="notif-meta">
+          <span class="badge badge-muted" style="font-size:0.7rem">{{ n.type.replace('_', ' ') }}</span>
+          <span class="notif-time">{{ getTimeAgo(n.createdAt) }}</span>
+        </div>
+        <a *ngIf="n.deepLinkUrl" [href]="n.deepLinkUrl" class="notif-link" (click)="$event.stopPropagation()">
+          View →
+        </a>
+      </div>
+
+      <div class="notif-actions">
+        <div class="unread-dot" *ngIf="!n.isRead" title="Unread"></div>
+        <button class="icon-action" (click)="deleteNotification(n.notificationId); $event.stopPropagation()" title="Delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

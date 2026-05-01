@@ -1,0 +1,107 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1>{{ auth.isAuthenticated() ? 'Projects' : 'Explore' }}</h1>
+      <p class="page-subtitle">{{ auth.isAuthenticated() ? 'Your projects and collaborations.' : 'Browse public projects from the community.' }}</p>
+    </div>
+    <div class="header-actions" *ngIf="auth.isAuthenticated()">
+      <a routerLink="/projects/new" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        New Project
+      </a>
+    </div>
+  </div>
+
+  <!-- Tabs (auth only) -->
+  <div class="tabs" *ngIf="auth.isAuthenticated()">
+    <button class="tab" [class.active]="activeTab === 'my'" (click)="setTab('my')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      My Projects
+    </button>
+    <button class="tab" [class.active]="activeTab === 'member'" (click)="setTab('member')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Member Of
+    </button>
+    <button class="tab" [class.active]="activeTab === 'public'" (click)="setTab('public')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Explore
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Search projects..." class="search-input">
+    </div>
+    <select [(ngModel)]="selectedLang" (ngModelChange)="applyFilter()" class="form-select filter-select">
+      <option value="">All languages</option>
+      <option *ngFor="let l of languages" [value]="l">{{ l }}</option>
+    </select>
+    <div class="results-count">
+      {{ filtered.length }} {{ filtered.length === 1 ? 'project' : 'projects' }}
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="projects-grid" *ngIf="loading">
+    <div *ngFor="let i of [1,2,3,4,5,6,7,8]" class="project-skeleton card">
+      <div class="skeleton" style="height:18px;width:55%;margin-bottom:0.5rem"></div>
+      <div class="skeleton" style="height:13px;width:90%;margin-bottom:0.25rem"></div>
+      <div class="skeleton" style="height:13px;width:70%;margin-bottom:1.5rem"></div>
+      <div style="display:flex;gap:0.5rem">
+        <div class="skeleton" style="height:22px;width:80px;border-radius:999px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && filtered.length === 0" class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3>No projects found</h3>
+    <p *ngIf="search || selectedLang">Try adjusting your search or filter.</p>
+    <p *ngIf="!search && !selectedLang && activeTab === 'my'">You haven't created any projects yet.</p>
+    <a routerLink="/projects/new" class="btn btn-primary btn-sm" *ngIf="!search && !selectedLang && activeTab === 'my'">Create your first project</a>
+  </div>
+
+  <!-- Projects Grid -->
+  <div class="projects-grid" *ngIf="!loading && filtered.length > 0">
+    <a *ngFor="let p of filtered; let i = index"
+       [routerLink]="['/projects', p.projectId]"
+       class="project-card card card-hover"
+       [style.animation-delay]="(i * 0.04) + 's'">
+
+      <div class="project-header">
+        <div class="project-name-row">
+          <span class="lang-dot-large" [style.background]="getLangColor(p.language)"></span>
+          <h3 class="project-name">{{ p.name }}</h3>
+        </div>
+        <button class="star-btn" (click)="starProject($event, p)" [title]="'Star ' + p.name">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          {{ p.starCount }}
+        </button>
+      </div>
+
+      <p class="project-desc">{{ p.description || 'No description provided.' }}</p>
+
+      <div class="project-tags">
+        <span class="lang-chip">
+          <span class="lang-dot" [style.background]="getLangColor(p.language)"></span>
+          {{ p.language || 'Unknown' }}
+        </span>
+        <span class="badge" [class]="p.visibility === 'PUBLIC' ? 'badge-success' : 'badge-muted'">
+          {{ p.visibility }}
+        </span>
+        <span class="badge badge-warning" *ngIf="p.isArchived">Archived</span>
+      </div>
+
+      <div class="project-footer">
+        <div class="project-stats">
+          <span>🔀 {{ p.forkCount }}</span>
+          <span>👥 {{ p.memberUserIds?.length || 0 }}</span>
+        </div>
+        <span class="project-date">{{ getTimeAgo(p.updatedAt) }}</span>
+      </div>
+    </a>
+  </div>
+</div>

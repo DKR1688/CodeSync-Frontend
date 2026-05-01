@@ -1,0 +1,100 @@
+<div class="collab-layout" *ngIf="!loading">
+  <div class="card" style="margin-bottom:1rem" *ngIf="joinError && session?.status === 'ACTIVE' && !joined">
+    <h3 style="margin-bottom:0.5rem">Join collaboration session</h3>
+    <p style="color:var(--text-muted);margin-bottom:1rem">Choose how you want to join this live room.</p>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select [(ngModel)]="joinForm.role" class="form-input">
+        <option value="EDITOR">Editor</option>
+        <option value="VIEWER">Viewer</option>
+      </select>
+    </div>
+    <div class="form-group" *ngIf="session?.passwordProtected">
+      <label class="form-label">Session password</label>
+      <input type="password" [(ngModel)]="joinForm.password" class="form-input" placeholder="Enter password">
+    </div>
+    <div class="alert alert-danger" style="margin-top:1rem">{{ joinError }}</div>
+    <button class="btn btn-primary" (click)="joinSession()" [disabled]="joinLoading" style="margin-top:1rem">
+      <span class="spinner" *ngIf="joinLoading" style="width:16px;height:16px;border-width:2px"></span>
+      Join session
+    </button>
+  </div>
+
+  <div class="collab-header" *ngIf="joined || session?.status === 'ENDED'">
+    <div class="collab-info">
+      <div class="collab-status">
+        <span class="status-dot" [class]="session?.status === 'ACTIVE' ? 'active' : 'inactive'"></span>
+        {{ session?.status === 'ACTIVE' ? 'Live Session' : 'Session Ended' }}
+      </div>
+      <span class="session-id">{{ sessionId.slice(0, 8) }}...</span>
+    </div>
+
+    <div class="collab-participants">
+      <div *ngFor="let p of participants" class="participant-avatar" [style.background]="p.color" [title]="p.userId">
+        {{ getParticipantInitial(p) }}
+        <span class="cursor-pos">L{{ p.cursorLine }}:{{ p.cursorCol }}</span>
+      </div>
+      <span class="participant-count">{{ participants.length }} / {{ session?.maxParticipants }} online</span>
+    </div>
+
+    <div class="collab-actions">
+      <button class="tool-btn" (click)="endSession()" *ngIf="isHost() && session?.status === 'ACTIVE'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        End Session
+      </button>
+      <a [routerLink]="['/projects', projectId, 'editor', fileId]" class="tool-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Solo Editor
+      </a>
+    </div>
+  </div>
+
+  <div class="collab-editor-row" *ngIf="joined || session?.status === 'ENDED'">
+    <div class="collab-code-area">
+      <div class="code-editor-area" style="flex:1;min-height:0">
+        <div class="line-numbers">
+          <div *ngFor="let l of code.split('\n'); let i = index" class="line-num">{{ i + 1 }}</div>
+        </div>
+        <textarea
+          class="code-textarea"
+          [(ngModel)]="code"
+          (input)="sendContentUpdate()"
+          (click)="onCursorChange($event)"
+          (keyup)="onCursorChange($event)"
+          [disabled]="session?.status !== 'ACTIVE'"
+          spellcheck="false"
+          autocomplete="off">
+        </textarea>
+      </div>
+    </div>
+
+    <div class="collab-sidebar">
+      <h4 class="collab-sidebar-title">Participants</h4>
+      <div class="participant-list">
+        <div *ngFor="let p of participants" class="participant-item">
+          <div class="p-avatar" [style.background]="p.color">{{ getParticipantInitial(p) }}</div>
+          <div class="p-info">
+            <div class="p-role-badge" [class]="p.role === 'HOST' ? 'host' : 'editor'">{{ p.role }}</div>
+            <div class="p-cursor">L{{ p.cursorLine }}:{{ p.cursorCol }}</div>
+          </div>
+          <button class="kick-btn" *ngIf="isHost() && p.role !== 'HOST'" (click)="kickParticipant(p)" title="Kick">×</button>
+        </div>
+      </div>
+
+      <div class="collab-revision" *ngIf="session">
+        <div class="rev-label">Revision</div>
+        <div class="rev-num">#{{ session.currentRevision || 0 }}</div>
+      </div>
+
+      <div class="session-ended-banner" *ngIf="session?.status === 'ENDED'">
+        <div>Session ended</div>
+        <a [routerLink]="['/projects', projectId, 'editor', fileId]" class="btn btn-secondary btn-sm" style="margin-top:0.5rem">Back to Editor</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="editor-loading" *ngIf="loading">
+  <div class="spinner" style="width:40px;height:40px;border-width:3px;border-color:rgba(255,255,255,0.1);border-top-color:var(--accent)"></div>
+  <p style="color:rgba(255,255,255,0.4)">Joining session...</p>
+</div>

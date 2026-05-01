@@ -1,20 +1,22 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AuthStateService } from './core/services/auth-state.service';
+import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css',
+  standalone: true,
+  imports: [RouterOutlet, NavbarComponent],
+  template: `
+    <div class="app-layout">
+      <app-navbar />
+      <main class="main-content">
+        <router-outlet />
+      </main>
+    </div>
+  `
 })
-export class App {
-  constructor(
-    private readonly authState: AuthStateService,
-    private readonly themeService: ThemeService,
-  ) {
-    this.themeService.initialize();
-    this.authState.restoreSession().subscribe();
-  }
+export class App implements OnInit {
+  theme = inject(ThemeService);
+  ngOnInit() { this.theme.isDark(); }
 }

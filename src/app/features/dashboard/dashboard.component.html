@@ -1,0 +1,171 @@
+<div class="page-container fade-in">
+  <!-- Header -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-greeting">
+        Good {{ getGreeting() }}, <span class="gradient-name">{{ (user?.fullName || user?.username || '') }}</span> 👋
+      </h1>
+      <p class="dash-subtitle">Here's what's happening with your projects today.</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/projects/new" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        New Project
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--accent-subtle); color:var(--accent)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-val">{{ stats.projects }}</div>
+        <div class="stat-lbl">Projects</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--success-subtle); color:var(--success)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-val">{{ stats.executions }}</div>
+        <div class="stat-lbl">Code Runs</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--danger-subtle); color:var(--danger)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-val">{{ stats.unread }}</div>
+        <div class="stat-lbl">Unread Alerts</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--warning-subtle); color:var(--warning)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-val">{{ myProjects.reduce((s, p) => s + (p.memberUserIds?.length || 0), 0) }}</div>
+        <div class="stat-lbl">Collaborators</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- My Projects -->
+    <div class="dash-section main-section">
+      <div class="section-top">
+        <h3>My Projects</h3>
+        <a routerLink="/projects" class="btn btn-ghost btn-sm">View all →</a>
+      </div>
+
+      <div *ngIf="loading" class="projects-grid">
+        <div *ngFor="let i of [1,2,3,4,5,6]" class="project-skeleton">
+          <div class="skeleton" style="height:20px;width:60%;margin-bottom:0.5rem"></div>
+          <div class="skeleton" style="height:14px;width:90%;margin-bottom:1rem"></div>
+          <div class="skeleton" style="height:24px;width:40%"></div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && myProjects.length === 0" class="empty-state" style="padding:2.5rem">
+        <div class="empty-icon">📁</div>
+        <h3>No projects yet</h3>
+        <p>Create your first project and start coding!</p>
+        <a routerLink="/projects/new" class="btn btn-primary btn-sm" style="margin-top:0.5rem">Create project</a>
+      </div>
+
+      <div class="projects-grid" *ngIf="!loading && myProjects.length > 0">
+        <a *ngFor="let p of myProjects" [routerLink]="['/projects', p.projectId]" class="project-card card-hover card">
+          <div class="project-top">
+            <div class="project-icon">
+              <span [style.background]="getLangColor(p.language)"></span>
+            </div>
+            <span class="badge" [class]="p.visibility === 'PUBLIC' ? 'badge-success' : 'badge-muted'">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path *ngIf="p.visibility === 'PUBLIC'" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <path *ngIf="p.visibility !== 'PUBLIC'" d="M17 1l4 4-4 4M7 23l-4-4 4-4M1 12h22"/>
+              </svg>
+              {{ p.visibility }}
+            </span>
+          </div>
+          <h4 class="project-name">{{ p.name }}</h4>
+          <p class="project-desc">{{ p.description || 'No description provided.' }}</p>
+          <div class="project-meta">
+            <span class="lang-chip">
+              <span class="lang-dot" [style.background]="getLangColor(p.language)"></span>
+              {{ p.language || 'Unknown' }}
+            </span>
+            <div class="project-stats">
+              <span>⭐ {{ p.starCount }}</span>
+              <span>🔀 {{ p.forkCount }}</span>
+            </div>
+          </div>
+          <div class="project-date">Updated {{ getTimeAgo(p.updatedAt) }}</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="dash-section side-section">
+      <!-- Quick Actions -->
+      <div class="quick-actions card" style="margin-bottom:1.25rem">
+        <h4 style="margin-bottom:1rem">Quick Actions</h4>
+        <div class="qa-list">
+          <a routerLink="/projects/new" class="qa-item">
+            <div class="qa-icon" style="background:var(--accent-subtle);color:var(--accent)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div><div class="qa-title">New Project</div><div class="qa-sub">Start from scratch</div></div>
+          </a>
+          <a routerLink="/explore" class="qa-item">
+            <div class="qa-icon" style="background:var(--success-subtle);color:var(--success)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <div><div class="qa-title">Explore</div><div class="qa-sub">Browse public projects</div></div>
+          </a>
+          <a routerLink="/notifications" class="qa-item">
+            <div class="qa-icon" style="background:var(--warning-subtle);color:var(--warning)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
+            <div>
+              <div class="qa-title">Notifications</div>
+              <div class="qa-sub">{{ stats.unread }} unread</div>
+            </div>
+          </a>
+          <a routerLink="/profile" class="qa-item">
+            <div class="qa-icon" style="background:var(--info-subtle, var(--bg-tertiary));color:var(--info, var(--accent))">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div><div class="qa-title">Profile</div><div class="qa-sub">Edit your account</div></div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent Notifications -->
+      <div class="card">
+        <div class="section-top" style="margin-bottom:1rem">
+          <h4>Notifications</h4>
+          <a routerLink="/notifications" class="btn btn-ghost btn-sm">All →</a>
+        </div>
+        <div *ngIf="recentNotifications.length === 0" class="empty-state" style="padding:1.5rem">
+          <div class="empty-icon" style="font-size:2rem">🔔</div>
+          <p style="font-size:0.875rem">All caught up!</p>
+        </div>
+        <div class="notif-list" *ngIf="recentNotifications.length > 0">
+          <div *ngFor="let n of recentNotifications" class="notif-item" [class.unread]="!n.isRead">
+            <div class="notif-type">{{ getNotifIcon(n.type) }}</div>
+            <div class="notif-body">
+              <div class="notif-title">{{ n.title }}</div>
+              <div class="notif-msg">{{ n.message }}</div>
+              <div class="notif-time">{{ getTimeAgo(n.createdAt) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,112 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <a [routerLink]="['/projects', projectId]" class="back-link">← Back to Project</a>
+      <h1>Code Reviews</h1>
+      <p class="page-subtitle">Inline comments and review threads for this project.</p>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <div class="filter-tabs">
+      <button class="filter-btn" [class.active]="filter === 'all'" (click)="filter = 'all'; applyFilter()">All</button>
+      <button class="filter-btn" [class.active]="filter === 'open'" (click)="filter = 'open'; applyFilter()">
+        Open <span class="badge badge-accent">{{ comments.filter(c => !c.resolved).length }}</span>
+      </button>
+      <button class="filter-btn" [class.active]="filter === 'resolved'" (click)="filter = 'resolved'; applyFilter()">
+        Resolved <span class="badge badge-success">{{ comments.filter(c => c.resolved).length }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="comment-list">
+    <div *ngFor="let i of [1,2,3]" class="card comment-skeleton">
+      <div class="skeleton" style="height:18px;width:70%;margin-bottom:0.5rem"></div>
+      <div class="skeleton" style="height:14px;width:90%;margin-bottom:0.25rem"></div>
+      <div class="skeleton" style="height:14px;width:60%"></div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && filteredComments.length === 0" class="empty-state">
+    <div class="empty-icon">💬</div>
+    <h3>No comments {{ filter !== 'all' ? 'in this category' : 'yet' }}</h3>
+    <p>Open a file in the editor and add inline comments on specific lines.</p>
+  </div>
+
+  <div class="comment-list" *ngIf="!loading && filteredComments.length > 0">
+    <div *ngFor="let c of filteredComments" class="comment-card card" [class.resolved]="c.resolved">
+      <div class="comment-header">
+        <div class="comment-line-info">
+          <span class="line-badge">Line {{ c.lineNumber }}</span>
+          <span class="file-name text-mono">{{ getShortId(c.fileId) }}</span>
+        </div>
+        <div class="comment-status">
+          <span class="badge" [class]="c.resolved ? 'badge-success' : 'badge-warning'">
+            {{ c.resolved ? '✓ Resolved' : '⏳ Open' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Comment body -->
+      <div class="comment-body">
+        <div class="comment-author">
+          <div class="avatar avatar-sm" style="background:var(--accent)">{{ c.authorId ? getInitial(c.authorId) : '?' }}</div>
+          <span class="author-name">{{ c.author?.username || 'User' }}</span>
+          <span class="comment-time">{{ getTimeAgo(c.createdAt) }}</span>
+        </div>
+
+        <div *ngIf="editingId !== c.commentId" class="comment-text">{{ c.content }}</div>
+        <div *ngIf="editingId === c.commentId" class="edit-area">
+          <textarea [(ngModel)]="editContent" class="form-textarea" rows="3"></textarea>
+          <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+            <button class="btn btn-primary btn-sm" (click)="saveEdit(c)">Save</button>
+            <button class="btn btn-ghost btn-sm" (click)="editingId = undefined">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Replies -->
+      <div class="replies" *ngIf="c.replies && c.replies.length > 0">
+        <div *ngFor="let r of c.replies" class="reply-item">
+          <div class="avatar avatar-sm" style="background:var(--success)">{{ r.authorId ? getInitial(r.authorId) : '?' }}</div>
+          <div class="reply-body">
+            <div class="reply-meta">
+              <span class="author-name">{{ r.author?.username || 'User' }}</span>
+              <span class="comment-time">{{ getTimeAgo(r.createdAt) }}</span>
+            </div>
+            <p class="reply-text">{{ r.content }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reply input -->
+      <div class="reply-form" *ngIf="replyingTo === c.commentId">
+        <textarea [(ngModel)]="replyContent" class="form-textarea" rows="2" placeholder="Write a reply..."></textarea>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+          <button class="btn btn-primary btn-sm" (click)="submitReply(c.commentId)" [disabled]="!replyContent.trim()">Reply</button>
+          <button class="btn btn-ghost btn-sm" (click)="replyingTo = undefined">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="comment-actions">
+        <button class="action-btn" (click)="replyingTo = replyingTo === c.commentId ? undefined : c.commentId">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Reply
+        </button>
+        <button class="action-btn" (click)="startEdit(c)" *ngIf="editingId !== c.commentId">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+        <button class="action-btn" (click)="resolve(c)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          {{ c.resolved ? 'Reopen' : 'Resolve' }}
+        </button>
+        <button class="action-btn danger" (click)="delete(c.commentId)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

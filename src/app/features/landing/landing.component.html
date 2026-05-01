@@ -1,0 +1,157 @@
+<div class="landing">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-orb orb-1"></div>
+      <div class="hero-orb orb-2"></div>
+      <div class="hero-grid"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="status-dot active"></span>
+        Live collaboration · Now in Beta
+      </div>
+      <h1 class="hero-title">
+        Code Together.<br>
+        <span class="gradient-text">Build Faster.</span><br>
+        Ship Smarter.
+      </h1>
+      <p class="hero-desc">
+        CodeSync is a browser-based collaborative IDE where teams write, run, review,
+        and version-control code in real time — no setup required.
+      </p>
+      <div class="hero-actions">
+        <a routerLink="/auth/register" class="btn btn-primary btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Start for free
+        </a>
+        <a routerLink="/explore" class="btn btn-secondary btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Explore projects
+        </a>
+      </div>
+      <div class="hero-langs">
+        <span class="lang-label">Supports</span>
+        <div class="lang-list">
+          <span *ngFor="let lang of languages" class="lang-pill">{{ lang }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero editor mockup -->
+    <div class="hero-editor">
+      <div class="editor-header">
+        <div class="editor-dots">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <div class="editor-tabs">
+          <span class="editor-tab active">main.py</span>
+          <span class="editor-tab">utils.py</span>
+        </div>
+        <div class="collab-avatars">
+          <div class="collab-av" style="background:#7c6af5">A</div>
+          <div class="collab-av" style="background:#22c55e">B</div>
+          <div class="collab-av" style="background:#f59e0b">C</div>
+        </div>
+      </div>
+      <div class="editor-body">
+        <pre class="code-content"><span class="kw">from</span> <span class="mod">typing</span> <span class="kw">import</span> List
+<span class="kw">import</span> <span class="mod">asyncio</span>
+
+<span class="kw">class</span> <span class="cls">CollabSession</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, session_id: <span class="tp">str</span>):
+        self.session_id = session_id
+        self.participants: List[<span class="tp">str</span>] = []
+
+    <span class="kw">async def</span> <span class="fn">broadcast</span>(self, event: <span class="tp">dict</span>):
+        <span class="kw">await</span> asyncio.gather(<span class="cm">#</span>
+            *[p.send(event) <span class="kw">for</span> p <span class="kw">in</span> self.participants]
+        )
+<span class="cursor-line">    <span class="cursor-block">█</span></span></pre>
+        <div class="cursor-indicators">
+          <div class="cursor-tag" style="color:#7c6af5; border-color:#7c6af5">Alice</div>
+          <div class="cursor-tag" style="color:#22c55e; border-color:#22c55e; top:80px;">Bob</div>
+        </div>
+      </div>
+      <div class="editor-status">
+        <span class="status-dot active"></span>
+        <span>3 collaborators · revision #47</span>
+        <span class="status-right">Python 3.11</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features-section">
+    <div class="section-header">
+      <div class="section-tag">Features</div>
+      <h2>Everything your team needs</h2>
+      <p>A complete collaborative coding environment in the browser.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card" *ngFor="let f of features; let i = index" [style.animation-delay]="(i * 0.08) + 's'">
+        <div class="feature-icon">{{ f.icon }}</div>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.desc }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section">
+    <div class="stats-inner">
+      <div class="stat-item">
+        <div class="stat-num">13+</div>
+        <div class="stat-label">Languages</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num">10ms</div>
+        <div class="stat-label">Sync latency</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num">99.9%</div>
+        <div class="stat-label">Uptime SLA</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num">∞</div>
+        <div class="stat-label">Projects</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-inner">
+      <h2>Ready to code together?</h2>
+      <p>Join developers building the future — one collaborative session at a time.</p>
+      <div class="cta-actions">
+        <a routerLink="/auth/register" class="btn btn-primary btn-lg">Get started free</a>
+        <a routerLink="/auth/login" class="btn btn-secondary btn-lg">Sign in</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+          <rect width="22" height="22" rx="6" fill="currentColor" opacity="0.15"/>
+          <path d="M6 8l4 3-4 3M12 14h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>CodeSync</span>
+      </div>
+      <div class="footer-links">
+        <a routerLink="/explore">Explore</a>
+        <a routerLink="/auth/register">Register</a>
+        <a routerLink="/auth/login">Sign In</a>
+      </div>
+      <div class="footer-copy">© 2026 CodeSync. Code Together.</div>
+    </div>
+  </footer>
+</div>

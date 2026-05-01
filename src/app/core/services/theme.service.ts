@@ -1,47 +1,33 @@
 import { Injectable, signal } from '@angular/core';
 
-export type AppTheme = 'light' | 'dark';
-
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private readonly storageKey = 'codesync-theme';
-  readonly theme = signal<AppTheme>('light');
+  private readonly THEME_KEY = 'codesync_theme';
+  isDark = signal<boolean>(this.getInitialTheme());
 
-  initialize(): void {
-    const storedTheme = this.readStoredTheme();
-    const preferredTheme =
-      storedTheme ||
-      (typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light');
-
-    this.applyTheme(preferredTheme);
+  constructor() {
+    this.applyTheme(this.isDark());
   }
 
-  toggleTheme(): void {
-    this.applyTheme(this.theme() === 'light' ? 'dark' : 'light');
+  toggle(): void {
+    const newVal = !this.isDark();
+    this.isDark.set(newVal);
+    localStorage.setItem(this.THEME_KEY, newVal ? 'dark' : 'light');
+    this.applyTheme(newVal);
   }
 
-  private applyTheme(theme: AppTheme): void {
-    this.theme.set(theme);
-
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset['theme'] = theme;
-    }
-
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(this.storageKey, theme);
+  private applyTheme(dark: boolean): void {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    if (dark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   }
 
-  private readStoredTheme(): AppTheme | null {
-    if (typeof localStorage === 'undefined') {
-      return null;
-    }
-
-    const value = localStorage.getItem(this.storageKey);
-    return value === 'light' || value === 'dark' ? value : null;
+  private getInitialTheme(): boolean {
+    const stored = localStorage.getItem(this.THEME_KEY);
+    if (stored) return stored === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 }

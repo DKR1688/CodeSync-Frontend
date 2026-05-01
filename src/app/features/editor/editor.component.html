@@ -1,0 +1,251 @@
+<div class="editor-layout" *ngIf="!loading">
+  <!-- Left: File tree sidebar -->
+  <aside class="editor-sidebar">
+    <div class="sidebar-header">
+      <a [routerLink]="['/projects', projectId]" class="back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Project
+      </a>
+    </div>
+    <div class="sidebar-section-title">Files</div>
+    <nav class="file-nav">
+      <ng-container *ngTemplateOutlet="treeNav; context: { nodes: fileTree }"></ng-container>
+    </nav>
+  </aside>
+
+  <!-- Center: Editor area -->
+  <div class="editor-main">
+    <!-- Editor toolbar -->
+    <div class="editor-toolbar">
+      <div class="toolbar-left">
+        <span class="file-path">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+          {{ file?.path || file?.name }}
+        </span>
+        <span class="lang-badge" *ngIf="file?.language">{{ file!.language }}</span>
+        <span class="save-indicator saving" *ngIf="saving">
+          <span class="spinner" style="width:12px;height:12px;border-width:1.5px"></span>
+          Saving...
+        </span>
+        <span class="save-indicator saved" *ngIf="saved && !saving">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          Saved
+        </span>
+      </div>
+      <div class="toolbar-actions">
+        <button class="tool-btn" (click)="saveFile()" title="Save (Ctrl+S)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save
+        </button>
+        <button class="tool-btn" (click)="showSnapshotModal = true" title="Create snapshot">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+          Snapshot
+        </button>
+        <a [routerLink]="['/projects', projectId, 'history', fileId]" class="tool-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </a>
+        <button class="tool-btn" (click)="openCollaboration()" [disabled]="loadingSession">
+          <span class="spinner" *ngIf="loadingSession" style="width:14px;height:14px;border-width:2px"></span>
+          <svg *ngIf="!loadingSession" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          {{ activeSession ? 'Join Live' : 'Collaborate' }}
+        </button>
+        <button class="tool-btn accent" (click)="runCode()" [disabled]="running" title="Run code">
+          <svg *ngIf="!running" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span class="spinner" *ngIf="running" style="width:14px;height:14px;border-width:2px;border-color:white;border-top-color:transparent"></span>
+          {{ running ? 'Running...' : 'Run' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Monaco-style code editor (textarea placeholder) -->
+    <div class="code-editor-area">
+      <div class="line-numbers">
+        <div *ngFor="let line of code.split('\n'); let i = index" class="line-num">{{ i + 1 }}</div>
+        <div class="line-num">{{ code.split('\n').length + 1 }}</div>
+      </div>
+      <textarea
+        class="code-textarea"
+        [(ngModel)]="code"
+        (ngModelChange)="onCodeChange($event)"
+        (keydown.Tab)="$event.preventDefault(); insertTab($any($event))"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        [style.height]="'100%'"
+      ></textarea>
+    </div>
+    <div class="card" style="margin:0 1rem 1rem;padding:0.875rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem" *ngIf="activeSession">
+      <div>
+        <div style="font-weight:700">Live collaboration session is active for this file</div>
+        <div style="font-size:0.875rem;color:var(--text-muted)">
+          {{ activeSession.participantCount }} participant{{ activeSession.participantCount === 1 ? '' : 's' }} connected
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" (click)="openCollaboration()">Open Session</button>
+    </div>
+
+    <!-- Bottom panel -->
+    <div class="bottom-panel" [class.expanded]="activePanel !== null">
+      <div class="panel-tabs">
+        <button class="panel-tab" [class.active]="activePanel === 'output'" (click)="activePanel = activePanel === 'output' ? null : 'output'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Output
+          <span class="badge badge-success" *ngIf="executionJob?.status === 'COMPLETED'">Done</span>
+          <span class="badge badge-danger" *ngIf="executionJob?.status === 'FAILED'">Failed</span>
+          <span class="badge badge-warning" *ngIf="running">Running</span>
+        </button>
+        <button class="panel-tab" [class.active]="activePanel === 'comments'" (click)="activePanel = activePanel === 'comments' ? null : 'comments'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Comments
+          <span class="badge badge-accent" *ngIf="comments.length > 0">{{ comments.length }}</span>
+        </button>
+
+        <div class="panel-spacer"></div>
+
+        <div class="stdin-row" *ngIf="activePanel === 'output'">
+          <label class="panel-label">stdin:</label>
+          <input type="text" [(ngModel)]="stdin" class="stdin-input" placeholder="Input for your program...">
+          <button class="tool-btn danger btn-sm" (click)="cancelRun()" *ngIf="running">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            Stop
+          </button>
+        </div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="panel-content" *ngIf="activePanel === 'output'">
+        <div class="exec-meta" *ngIf="executionJob">
+          <span class="badge" [class]="'badge-' + getStatusClass(executionJob.status)">{{ executionJob.status }}</span>
+          <span class="exec-stat" *ngIf="executionJob.executionTimeMs">⏱ {{ executionJob.executionTimeMs }}ms</span>
+          <span class="exec-stat" *ngIf="executionJob.exitCode !== undefined">exit: {{ executionJob.exitCode }}</span>
+          <span class="exec-stat" *ngIf="executionJob.memoryUsedKb">🧠 {{ executionJob.memoryUsedKb }}KB</span>
+        </div>
+        <pre class="output-pre" *ngIf="runOutput">{{ runOutput }}</pre>
+        <pre class="output-pre stderr" *ngIf="executionJob?.stderr">{{ executionJob!.stderr }}</pre>
+        <div class="output-empty" *ngIf="!runOutput && !running">
+          <p>Click <strong>Run</strong> to execute your code.</p>
+        </div>
+        <div class="output-running" *ngIf="running && !runOutput">
+          <span class="spinner" style="width:20px;height:20px;border-width:2px"></span>
+          <span>Executing in sandbox...</span>
+        </div>
+      </div>
+
+      <!-- Comments Panel -->
+      <div class="panel-content" *ngIf="activePanel === 'comments'">
+        <div class="comments-toolbar">
+          <button class="btn btn-primary btn-sm" (click)="showCommentModal = true">Add Comment</button>
+        </div>
+        <div *ngIf="comments.length === 0" class="output-empty"><p>No comments yet. Add the first one!</p></div>
+        <div class="comment-list" *ngIf="comments.length > 0">
+          <div *ngFor="let c of comments" class="comment-item" [class.resolved]="c.resolved">
+            <div class="comment-line-badge">L{{ c.lineNumber }}</div>
+            <div class="comment-body">
+              <div class="comment-content">{{ c.content }}</div>
+              <div class="comment-meta">{{ getTimeAgo(c.createdAt) }} · {{ c.resolved ? 'Resolved' : 'Open' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showSessionModal" (click)="showSessionModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Start collaboration session</h3>
+      <button class="btn btn-ghost btn-icon btn-sm" (click)="showSessionModal = false">×</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max participants</label>
+      <input type="number" [(ngModel)]="sessionForm.maxParticipants" class="form-input" min="1" max="100">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password (optional)</label>
+      <input type="text" [(ngModel)]="sessionForm.password" class="form-input" placeholder="Leave empty for open access">
+    </div>
+    <div class="alert alert-danger" *ngIf="sessionError" style="margin-top:1rem">{{ sessionError }}</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="showSessionModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="createSession()" [disabled]="creatingSession">
+        <span class="spinner" *ngIf="creatingSession" style="width:16px;height:16px;border-width:2px"></span>
+        Start session
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="editor-loading" *ngIf="loading">
+  <div class="spinner" style="width:40px;height:40px;border-width:3px"></div>
+  <p>Loading editor...</p>
+</div>
+
+<!-- File nav template -->
+<ng-template #treeNav let-nodes="nodes">
+  <div *ngFor="let node of nodes">
+    <a *ngIf="!node.folder"
+       [routerLink]="['/projects', projectId, 'editor', node.fileId]"
+       class="file-nav-item"
+       [class.active]="node.fileId === fileId">
+      <span>{{ getFileIcon(node) }}</span>
+      <span class="file-nav-name">{{ node.name }}</span>
+    </a>
+    <div *ngIf="node.folder" class="file-nav-folder">
+      <span>📁</span>
+      <span>{{ node.name }}/</span>
+    </div>
+    <div *ngIf="node.children" style="padding-left:1rem">
+      <ng-container *ngTemplateOutlet="treeNav; context: { nodes: node.children }"></ng-container>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Snapshot Modal -->
+<div class="modal-overlay" *ngIf="showSnapshotModal" (click)="showSnapshotModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Create Snapshot</h3>
+      <button class="btn btn-ghost btn-icon btn-sm" (click)="showSnapshotModal = false">✕</button>
+    </div>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:0.9375rem">Save the current state of this file with a commit message.</p>
+    <div class="form-group">
+      <label class="form-label">Commit Message</label>
+      <input type="text" [(ngModel)]="snapshotMessage" class="form-input" placeholder="e.g. Add error handling" (keyup.enter)="createSnapshot()">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="showSnapshotModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="createSnapshot()" [disabled]="!snapshotMessage.trim() || creatingSnapshot">
+        <span class="spinner" *ngIf="creatingSnapshot" style="width:16px;height:16px;border-width:2px"></span>
+        Save Snapshot
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Comment Modal -->
+<div class="modal-overlay" *ngIf="showCommentModal" (click)="showCommentModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Add Comment</h3>
+      <button class="btn btn-ghost btn-icon btn-sm" (click)="showCommentModal = false">✕</button>
+    </div>
+    <div class="form-row" style="display:grid;grid-template-columns:100px 1fr;gap:0.75rem">
+      <div class="form-group">
+        <label class="form-label">Line #</label>
+        <input type="number" [(ngModel)]="newComment.lineNumber" class="form-input" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comment</label>
+        <textarea [(ngModel)]="newComment.content" class="form-textarea" placeholder="Describe the issue or suggestion..." rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="showCommentModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="addComment()" [disabled]="!newComment.content.trim()">Add Comment</button>
+    </div>
+  </div>
+</div>

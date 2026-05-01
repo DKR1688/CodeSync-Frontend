@@ -1,0 +1,100 @@
+<div class="create-page">
+  <div class="create-container">
+    <div class="create-header">
+      <a routerLink="/projects" class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Projects
+      </a>
+      <h1>New Project</h1>
+      <p>Create a new collaborative coding project.</p>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger" style="margin-bottom:1.5rem">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      {{ error }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="create-form">
+      <!-- Project Info -->
+      <div class="card form-section">
+        <h3 class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Project Info
+        </h3>
+        <div class="form-group">
+          <label class="form-label">Project Name <span class="required">*</span></label>
+          <input type="text" formControlName="name" class="form-input" placeholder="my-awesome-project">
+          <span class="form-error" *ngIf="form.get('name')?.invalid && form.get('name')?.touched">Name is required (2–100 characters).</span>
+          <span class="char-count">{{ form.get('name')?.value?.length || 0 }}/100</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea formControlName="description" class="form-textarea" placeholder="Brief description of your project..." rows="3"></textarea>
+          <span class="char-count">{{ form.get('description')?.value?.length || 0 }}/500</span>
+        </div>
+      </div>
+
+      <!-- Language -->
+      <div class="card form-section">
+        <h3 class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Programming Language <span class="required">*</span>
+        </h3>
+        <div class="lang-grid">
+          <button type="button"
+                  *ngFor="let lang of languages"
+                  class="lang-option"
+                  [class.selected]="form.get('language')?.value === lang.id"
+                  (click)="selectLanguage(lang.id)">
+            <span class="lang-emoji">{{ LANG_ICONS[lang.name.toLowerCase()] || '💻' }}</span>
+            <span class="lang-name">{{ lang.name }}</span>
+            <span class="lang-version">{{ lang.version }}</span>
+          </button>
+        </div>
+        <span class="form-error" *ngIf="form.get('language')?.invalid && form.get('language')?.touched">Please select a language.</span>
+      </div>
+
+      <!-- Visibility -->
+      <div class="card form-section">
+        <h3 class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Visibility
+        </h3>
+        <div class="visibility-options">
+          <label class="visibility-option" [class.selected]="form.get('visibility')?.value === 'PUBLIC'">
+            <input type="radio" formControlName="visibility" value="PUBLIC" style="display:none">
+            <div class="vis-icon">🌍</div>
+            <div>
+              <div class="vis-title">Public</div>
+              <div class="vis-desc">Anyone can view and clone this project.</div>
+            </div>
+            <div class="vis-check" *ngIf="form.get('visibility')?.value === 'PUBLIC'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+          </label>
+          <label class="visibility-option" [class.selected]="form.get('visibility')?.value === 'PRIVATE'">
+            <input type="radio" formControlName="visibility" value="PRIVATE" style="display:none">
+            <div class="vis-icon">🔒</div>
+            <div>
+              <div class="vis-title">Private</div>
+              <div class="vis-desc">Only you and invited members can access.</div>
+            </div>
+            <div class="vis-check" *ngIf="form.get('visibility')?.value === 'PRIVATE'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="form-actions">
+        <a routerLink="/projects" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg" [disabled]="loading || form.invalid">
+          <span class="spinner" *ngIf="loading" style="width:18px;height:18px;border-width:2px"></span>
+          <svg *ngIf="!loading" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          {{ loading ? 'Creating...' : 'Create Project' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

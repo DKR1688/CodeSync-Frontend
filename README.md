@@ -1,1 +1,1 @@
-# CodeSync-Frontend
+# Codesync-Frontend
