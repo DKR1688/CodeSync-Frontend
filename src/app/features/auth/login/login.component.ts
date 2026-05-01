@@ -28,6 +28,8 @@ export class LoginComponent {
   error = '';
   showPassword = false;
   apiUrl = environment.apiUrl;
+  githubOAuthUrl = `${environment.apiUrl}/oauth2/authorization/github`;
+  googleOAuthUrl = `${environment.apiUrl}/oauth2/authorization/google`;
 
   submit(): void {
     if (this.form.invalid || this.loading) return;
