@@ -6,6 +6,7 @@
   --bg-secondary: #ffffff;
   --bg-tertiary: #f0eeea;
   --bg-card: #ffffff;
+  --bg-card-rgb: 255, 255, 255;
   --border: #e2dfd8;
   --border-subtle: #ede9e3;
   --text-primary: #1a1714;
@@ -40,6 +41,7 @@
   --bg-secondary: #13131a;
   --bg-tertiary: #1a1a24;
   --bg-card: #16161f;
+  --bg-card-rgb: 22, 22, 31;
   --border: #2a2a38;
   --border-subtle: #1f1f2c;
   --text-primary: #f0eefa;

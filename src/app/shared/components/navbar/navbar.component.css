@@ -9,11 +9,7 @@
   z-index: 900;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background: rgba(var(--bg-card-raw, 255, 255, 255), 0.92);
-}
-
-[data-theme=dark] .navbar {
-  background: rgba(22, 22, 31, 0.92);
+  background: rgba(var(--bg-card-rgb), 0.92);
 }
 
 .nav-inner {
@@ -37,12 +33,14 @@
 .nav-logo .logo-mark {
   color: var(--accent);
   display: flex;
+  flex-shrink: 0;
 }
 .nav-logo .logo-text {
   font-size: 1.0625rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   color: var(--text-primary);
+  text-shadow: 0 0 0 transparent;
 }
 .nav-logo:hover .logo-text {
   color: var(--accent);
@@ -80,6 +78,14 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
+}
+
+.nav-actions .btn-ghost {
+  color: var(--text-secondary);
+}
+
+.nav-actions .btn-ghost:hover {
+  color: var(--text-primary);
 }
 
 .relative {
