@@ -162,6 +162,7 @@ export class EditorComponent implements OnInit, OnDestroy {
       fileId: this.fileId,
       language: this.file.language || 'python',
       sourceCode: this.code,
+      sourceFileName: this.file.name || this.file.path,
       stdin: this.stdin
     }).subscribe({
       next: (job) => {

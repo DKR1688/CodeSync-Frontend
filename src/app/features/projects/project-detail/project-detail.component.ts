@@ -48,6 +48,25 @@ export class ProjectDetailComponent implements OnInit {
     java: '#b07219', go: '#00add8', rust: '#dea584', cpp: '#f34b7d',
     kotlin: '#a97bff', swift: '#f05138', ruby: '#701516', php: '#4f5d95', r: '#198ce7'
   };
+  FILE_EXTENSION_LANGUAGE_MAP: Record<string, string> = {
+    py: 'python',
+    js: 'javascript',
+    mjs: 'javascript',
+    cjs: 'javascript',
+    ts: 'typescript',
+    java: 'java',
+    go: 'go',
+    rs: 'rust',
+    cpp: 'cpp',
+    cxx: 'cpp',
+    cc: 'cpp',
+    c: 'c',
+    kt: 'kotlin',
+    swift: 'swift',
+    rb: 'ruby',
+    php: 'php',
+    r: 'r'
+  };
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id')!;
@@ -132,10 +151,11 @@ export class ProjectDetailComponent implements OnInit {
     if (!this.newFileName.trim() || !this.project) return;
     this.creatingFile = true;
     const path = this.newFilePath ? `${this.newFilePath}/${this.newFileName}` : this.newFileName;
+    const language = this.inferLanguageFromFileName(this.newFileName) ?? this.project.language;
 
     const obs = this.newFileType === 'folder'
       ? this.fileService.createFolder({ projectId: this.project.projectId, name: this.newFileName, path })
-      : this.fileService.createFile({ projectId: this.project.projectId, name: this.newFileName, path, language: this.project.language });
+      : this.fileService.createFile({ projectId: this.project.projectId, name: this.newFileName, path, language });
 
     obs.subscribe({
       next: (file) => {
@@ -280,5 +300,14 @@ export class ProjectDetailComponent implements OnInit {
 
   private syncView(): void {
     this.cdr.detectChanges();
+  }
+
+  private inferLanguageFromFileName(fileName: string): string | null {
+    const extension = fileName.split('.').pop()?.trim().toLowerCase();
+    if (!extension || extension === fileName.trim().toLowerCase()) {
+      return null;
+    }
+
+    return this.FILE_EXTENSION_LANGUAGE_MAP[extension] ?? null;
   }
 }

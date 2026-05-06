@@ -190,6 +190,7 @@ export interface SubmitExecutionRequest {
   fileId?: EntityId;
   language: string;
   sourceCode: string;
+  sourceFileName?: string;
   stdin?: string;
   timeLimitSeconds?: number;
   memoryLimitMb?: number;

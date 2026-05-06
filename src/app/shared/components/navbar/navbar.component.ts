@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { EMPTY } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
@@ -20,16 +21,15 @@ export class NavbarComponent implements OnInit {
   theme = inject(ThemeService);
   notifService = inject(NotificationService);
 
-  user: User | null = null;
-  unreadCount = 0;
+  user = toSignal(this.auth.currentUser$, { initialValue: this.auth.currentUser$.value });
+  authenticated = computed(() => !!this.user() || !!this.auth.getStoredToken());
+  admin = computed(() => this.user()?.role === 'ADMIN');
+  unreadCount = toSignal(this.notifService.unreadCount$, { initialValue: this.notifService.unreadCount$.value });
   userMenuOpen = false;
   mobileMenuOpen = false;
 
   ngOnInit(): void {
-    this.auth.currentUser$.subscribe(u => this.user = u);
-    this.notifService.unreadCount$.subscribe(c => this.unreadCount = c);
-
-    if (this.auth.isAuthenticated()) {
+    if (this.authenticated()) {
       this.auth.ensureProfileLoaded().pipe(
         switchMap(user => user ? this.notifService.getUnreadCount() : EMPTY),
         catchError(() => EMPTY)
@@ -38,13 +38,14 @@ export class NavbarComponent implements OnInit {
   }
 
   getInitials(user: User): string {
-    if (user.fullName) return user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    if (user.fullName) return user.fullName.split(' ').map((name: string) => name[0]).join('').toUpperCase().slice(0, 2);
     return user.username[0].toUpperCase();
   }
 
   logout(): void {
     this.auth.logout();
     this.userMenuOpen = false;
+    this.mobileMenuOpen = false;
   }
 
   closeMenus(): void {

@@ -12,8 +12,8 @@ const browserOrigin = typeof window !== 'undefined' && window.location?.origin
   : '';
 const runtimeEnv = typeof window !== 'undefined' ? window.__env : undefined;
 
-const isAngularDevServer = /:\/\/(localhost|127\.0\.0\.1):4200$/i.test(browserOrigin);
-const defaultApiUrl = isAngularDevServer
+const isLocalBrowser = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(browserOrigin);
+const defaultApiUrl = isLocalBrowser
   ? 'http://127.0.0.1:8080'
   : browserOrigin || 'http://127.0.0.1:8080';
 
