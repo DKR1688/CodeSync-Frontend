@@ -37,6 +37,7 @@ jest.mock('@stomp/stompjs', () => ({
 }));
 
 import { WebSocketService } from './websocket.service';
+import { environment } from '../../../environments/environment';
 
 describe('WebSocketService', () => {
   let service: WebSocketService;
@@ -53,7 +54,7 @@ describe('WebSocketService', () => {
       done();
     });
 
-    expect(sockJsCalls[0]).toBe('http://127.0.0.1:8084/ws/collab');
+    expect(sockJsCalls[0]).toBe(`${environment.collabWsUrl}/ws/collab`);
 
     clientInstances[0].subscriptions.get('/topic/sessions/session-7')?.({
       body: JSON.stringify({ type: 'SYNC' }),
@@ -85,7 +86,7 @@ describe('WebSocketService', () => {
       }
     });
 
-    expect(sockJsCalls[0]).toBe('http://127.0.0.1:8080/ws/notifications');
+    expect(sockJsCalls[0]).toBe(`${environment.apiUrl}/ws/notifications`);
 
     clientInstances[0].subscriptions.get('/topic/notifications/15')?.({
       body: JSON.stringify({ type: 'MENTION' }),
@@ -109,7 +110,7 @@ describe('WebSocketService', () => {
       }
     });
 
-    expect(sockJsCalls[0]).toBe('http://127.0.0.1:8080/ws/executions');
+    expect(sockJsCalls[0]).toBe(`${environment.apiUrl}/ws/executions`);
 
     clientInstances[0].subscriptions.get('/topic/executions/job-1/stdout')?.({
       body: JSON.stringify({ chunk: 'Hello' }),
