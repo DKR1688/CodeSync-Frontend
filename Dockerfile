@@ -5,6 +5,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY angular.json tsconfig.json tsconfig.app.json tsconfig.spec.json jest.config.cjs setup-jest.ts ./
+COPY scripts scripts
 COPY public public
 COPY src src
 
