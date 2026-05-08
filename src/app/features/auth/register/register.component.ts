@@ -29,8 +29,8 @@ export class RegisterComponent {
   error = '';
   showPassword = false;
   apiUrl = environment.apiUrl;
-  githubOAuthUrl = `${environment.apiUrl}/oauth2/authorization/github`;
-  googleOAuthUrl = `${environment.apiUrl}/oauth2/authorization/google`;
+  githubOAuthUrl = this.buildOAuthUrl('github');
+  googleOAuthUrl = this.buildOAuthUrl('google');
 
   submit(): void {
     if (this.form.invalid || this.loading) return;
@@ -63,5 +63,17 @@ export class RegisterComponent {
       { level: 4, label: 'Strong', color: 'var(--success)' },
     ];
     return levels[score] || levels[0];
+  }
+
+  continueWithGoogle(): void {
+    window.location.href = this.googleOAuthUrl;
+  }
+
+  continueWithGithub(): void {
+    window.location.href = this.githubOAuthUrl;
+  }
+
+  private buildOAuthUrl(provider: 'github' | 'google'): string {
+    return `${environment.apiUrl}/oauth2/authorization/${provider}`;
   }
 }

@@ -28,8 +28,8 @@ export class LoginComponent {
   error = '';
   showPassword = false;
   apiUrl = environment.apiUrl;
-  githubOAuthUrl = `${environment.apiUrl}/oauth2/authorization/github`;
-  googleOAuthUrl = `${environment.apiUrl}/oauth2/authorization/google`;
+  githubOAuthUrl = this.buildOAuthUrl('github');
+  googleOAuthUrl = this.buildOAuthUrl('google');
 
   submit(): void {
     if (this.form.invalid || this.loading) return;
@@ -45,5 +45,17 @@ export class LoginComponent {
         this.error = err?.error?.message || 'Invalid credentials. Please try again.';
       }
     });
+  }
+
+  continueWithGoogle(): void {
+    window.location.href = this.googleOAuthUrl;
+  }
+
+  continueWithGithub(): void {
+    window.location.href = this.githubOAuthUrl;
+  }
+
+  private buildOAuthUrl(provider: 'github' | 'google'): string {
+    return `${environment.apiUrl}/oauth2/authorization/${provider}`;
   }
 }
