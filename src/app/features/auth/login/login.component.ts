@@ -28,6 +28,7 @@ export class LoginComponent {
   error = '';
   showPassword = false;
   apiUrl = environment.apiUrl;
+  authUrl = environment.authUrl;
   githubOAuthUrl = this.buildOAuthUrl('github');
   googleOAuthUrl = this.buildOAuthUrl('google');
 
@@ -56,6 +57,6 @@ export class LoginComponent {
   }
 
   private buildOAuthUrl(provider: 'github' | 'google'): string {
-    return `${environment.apiUrl}/oauth2/authorization/${provider}`;
+    return `${environment.authUrl}/oauth2/authorization/${provider}`;
   }
 }

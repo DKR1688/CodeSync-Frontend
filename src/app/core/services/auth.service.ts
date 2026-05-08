@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
 export class AuthService {
   private readonly TOKEN_KEY = 'codesync_token';
   private readonly USER_KEY = 'codesync_user';
-  private baseUrl = `${environment.apiUrl}/auth`;
+  private baseUrl = `${environment.authUrl}/auth`;
 
   currentUser$ = new BehaviorSubject<User | null>(this.getStoredUser());
   isAuthenticated = signal<boolean>(!!this.getStoredToken());
