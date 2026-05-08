@@ -12,7 +12,7 @@ export class WebSocketService {
   connectCollab(sessionId: string): Observable<any> {
     const subject = new Subject<any>();
     this.collabClient = new Client({
-      webSocketFactory: () => new SockJS(`${environment.collabWsUrl}/ws/collab`),
+      webSocketFactory: () => new SockJS(`${this.toSockJsHttpUrl(environment.collabWsUrl)}/ws/collab`),
       onConnect: () => {
         this.collabClient!.subscribe(`/topic/sessions/${sessionId}`, (msg: IMessage) => {
           subject.next(JSON.parse(msg.body));
@@ -69,5 +69,17 @@ export class WebSocketService {
   disconnect(): void {
     this.collabClient?.deactivate();
     this.notifClient?.deactivate();
+  }
+
+  private toSockJsHttpUrl(url: string): string {
+    if (url.startsWith('wss://')) {
+      return `https://${url.slice('wss://'.length)}`;
+    }
+
+    if (url.startsWith('ws://')) {
+      return `http://${url.slice('ws://'.length)}`;
+    }
+
+    return url;
   }
 }

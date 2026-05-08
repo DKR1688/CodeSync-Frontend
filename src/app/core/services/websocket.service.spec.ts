@@ -54,7 +54,7 @@ describe('WebSocketService', () => {
       done();
     });
 
-    expect(sockJsCalls[0]).toBe(`${environment.collabWsUrl}/ws/collab`);
+    expect(sockJsCalls[0]).toBe(`${environment.collabWsUrl.replace(/^ws/, 'http')}/ws/collab`);
 
     clientInstances[0].subscriptions.get('/topic/sessions/session-7')?.({
       body: JSON.stringify({ type: 'SYNC' }),

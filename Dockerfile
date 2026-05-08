@@ -15,6 +15,7 @@ FROM nginx:1.27-alpine
 
 ENV API_UPSTREAM=http://api-gateway:8080
 ENV FRONTEND_API_URL=
+ENV FRONTEND_AUTH_URL=
 ENV FRONTEND_COLLAB_WS_URL=
 
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
