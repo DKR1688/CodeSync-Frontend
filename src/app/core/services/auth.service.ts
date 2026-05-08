@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, catchError, map, Observable, of, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, catchError, map, Observable, of, retry, switchMap, tap, throwError, timer } from 'rxjs';
 import { AuthResponse, LoginRequest, RegisterRequest, User } from '../models';
 import { environment } from '../../../environments/environment';
 
@@ -18,6 +18,7 @@ export class AuthService {
 
   login(req: LoginRequest): Observable<User> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, req).pipe(
+      this.retryTransientAuthErrors(),
       tap(res => this.handleAuthSuccess(res)),
       switchMap(() => this.getProfile())
     );
@@ -29,6 +30,7 @@ export class AuthService {
         email: req.email,
         password: req.password
       }).pipe(
+        this.retryTransientAuthErrors(),
         tap(res => this.handleAuthSuccess(res)),
         map(() => this.storeUser(user))
       ))
@@ -120,5 +122,17 @@ export class AuthService {
     localStorage.removeItem(this.USER_KEY);
     this.currentUser$.next(null);
     this.isAuthenticated.set(false);
+  }
+
+  private retryTransientAuthErrors<T>() {
+    return retry<T>({
+      count: 2,
+      delay: (error, retryCount) => {
+        if (!error || error.status < 500) {
+          return throwError(() => error);
+        }
+        return timer(400 * retryCount);
+      }
+    });
   }
 }
