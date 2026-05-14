@@ -50,10 +50,14 @@
           <svg *ngIf="!loadingSession" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           {{ activeSession ? 'Join Live' : 'Collaborate' }}
         </button>
-        <button class="tool-btn accent" (click)="runCode()" [disabled]="running" title="Run code">
+        <button
+          class="tool-btn accent"
+          (click)="runCode()"
+          [disabled]="running || !executionEnabled"
+          [title]="executionEnabled ? 'Run code' : 'Code execution is disabled in this deployment'">
           <svg *ngIf="!running" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <span class="spinner" *ngIf="running" style="width:14px;height:14px;border-width:2px;border-color:white;border-top-color:transparent"></span>
-          {{ running ? 'Running...' : 'Run' }}
+          {{ running ? 'Running...' : (executionEnabled ? 'Run' : 'Run Disabled') }}
         </button>
       </div>
     </div>
@@ -122,9 +126,10 @@
           <span class="exec-stat" *ngIf="executionJob.exitCode !== undefined">exit: {{ executionJob.exitCode }}</span>
           <span class="exec-stat" *ngIf="executionJob.memoryUsedKb">🧠 {{ executionJob.memoryUsedKb }}KB</span>
         </div>
+        <div class="alert alert-warning" *ngIf="executionMessage" style="margin-bottom:0.75rem">{{ executionMessage }}</div>
         <pre class="output-pre" *ngIf="runOutput">{{ runOutput }}</pre>
         <pre class="output-pre stderr" *ngIf="executionJob?.stderr">{{ executionJob!.stderr }}</pre>
-        <div class="output-empty" *ngIf="!runOutput && !running">
+        <div class="output-empty" *ngIf="!runOutput && !running && !executionMessage">
           <p>Click <strong>Run</strong> to execute your code.</p>
         </div>
         <div class="output-running" *ngIf="running && !runOutput">

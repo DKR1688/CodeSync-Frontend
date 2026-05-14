@@ -13,6 +13,7 @@ import { ProjectService } from '../../core/services/project.service';
 import { CodeFile, CollabSession, ExecutionJob, Snapshot, Comment, FileTreeNode } from '../../core/models';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-editor',
@@ -51,6 +52,8 @@ export class EditorComponent implements OnInit, OnDestroy {
   running = false;
   executionHistory: ExecutionJob[] = [];
   execSub?: Subscription;
+  executionEnabled = environment.executionEnabled;
+  executionMessage = '';
 
   // Versions
   snapshots: Snapshot[] = [];
@@ -153,8 +156,16 @@ export class EditorComponent implements OnInit, OnDestroy {
 
   runCode(): void {
     if (!this.file || this.running) return;
+    if (!this.executionEnabled) {
+      this.activePanel = 'output';
+      this.executionMessage = 'Code execution is disabled in this deployment.';
+      this.syncView();
+      return;
+    }
+
     this.running = true;
     this.runOutput = '';
+    this.executionMessage = '';
     this.activePanel = 'output';
 
     this.executionService.submit({
@@ -179,8 +190,9 @@ export class EditorComponent implements OnInit, OnDestroy {
           this.syncView();
         });
       },
-      error: () => {
+      error: (err) => {
         this.running = false;
+        this.executionMessage = err?.error?.message || 'Unable to execute code right now.';
         this.syncView();
       }
     });
