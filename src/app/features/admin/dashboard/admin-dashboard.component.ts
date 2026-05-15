@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ExecutionService } from '../../../core/services/execution.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -31,6 +31,7 @@ export class AdminDashboardComponent implements OnInit {
   executions: ExecutionJob[] = [];
   languages: SupportedLanguage[] = [];
   loading: Record<string, boolean> = {};
+  overviewWarnings: string[] = [];
   executionFilters = {
     status: '',
     language: ''
@@ -61,11 +62,35 @@ export class AdminDashboardComponent implements OnInit {
 
   loadOverview(): void {
     this.loading['overview'] = true;
+    this.overviewWarnings = [];
     forkJoin({
-      users: this.http.get<User[]>(`${environment.apiUrl}/auth/users`),
-      projects: this.http.get<Project[]>(`${environment.apiUrl}/api/v1/projects/admin/all`),
-      executionStats: this.executionService.getStats(),
-      activeSessions: this.http.get<any[]>(`${environment.apiUrl}/api/v1/sessions/active`)
+      users: this.http.get<User[]>(`${environment.apiUrl}/auth/users`).pipe(
+        catchError(() => {
+          this.overviewWarnings.push('Unable to load user totals right now.');
+          return of([] as User[]);
+        })
+      ),
+      projects: this.http.get<Project[]>(`${environment.apiUrl}/api/v1/projects/admin/all`).pipe(
+        catchError(() => {
+          this.overviewWarnings.push('Unable to load project totals right now.');
+          return of([] as Project[]);
+        })
+      ),
+      executionStats: this.executionService.getStats().pipe(
+        catchError(() => {
+          this.overviewWarnings.push('Execution stats are temporarily unavailable.');
+          return of({
+            totalExecutions: 0,
+            executionsByLanguage: {}
+          });
+        })
+      ),
+      activeSessions: this.http.get<any[]>(`${environment.apiUrl}/api/v1/sessions/active`).pipe(
+        catchError(() => {
+          this.overviewWarnings.push('Active collaboration sessions could not be loaded.');
+          return of([] as any[]);
+        })
+      )
     }).subscribe({
       next: ({ users, projects, executionStats, activeSessions }) => {
         this.users = users;
@@ -81,6 +106,7 @@ export class AdminDashboardComponent implements OnInit {
         this.syncView();
       },
       error: () => {
+        this.overviewWarnings = ['The overview could not be loaded completely.'];
         this.loading['overview'] = false;
         this.syncView();
       }

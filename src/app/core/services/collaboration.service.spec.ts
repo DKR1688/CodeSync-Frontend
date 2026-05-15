@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { CollaborationService } from './collaboration.service';
 
 describe('CollaborationService', () => {
@@ -38,5 +39,17 @@ describe('CollaborationService', () => {
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
     request.flush({});
+  });
+
+  it('times out stalled collaboration requests', async () => {
+    jest.useFakeTimers();
+
+    const result = firstValueFrom(service.createSession({ projectId: 6, fileId: 2 }));
+    httpMock.expectOne('http://127.0.0.1:8080/api/v1/sessions');
+
+    jest.advanceTimersByTime(15001);
+
+    await expect(result).rejects.toMatchObject({ name: 'TimeoutError' });
+    jest.useRealTimers();
   });
 });

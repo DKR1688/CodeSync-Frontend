@@ -12,22 +12,26 @@
 
   <!-- Admin Tabs -->
   <div class="tabs">
-    <button class="tab" [class.active]="activeTab === 'overview'" (click)="setTab('overview')">📊 Overview</button>
-    <button class="tab" [class.active]="activeTab === 'users'" (click)="setTab('users')">👥 Users</button>
-    <button class="tab" [class.active]="activeTab === 'executions'" (click)="setTab('executions')">⚡ Executions</button>
-    <button class="tab" [class.active]="activeTab === 'languages'" (click)="setTab('languages')">💻 Languages</button>
-    <button class="tab" [class.active]="activeTab === 'notifications'" (click)="setTab('notifications')">📢 Broadcast</button>
+    <button class="tab" [class.active]="activeTab === 'overview'" (click)="setTab('overview')">Overview</button>
+    <button class="tab" [class.active]="activeTab === 'users'" (click)="setTab('users')">Users</button>
+    <button class="tab" [class.active]="activeTab === 'executions'" (click)="setTab('executions')">Executions</button>
+    <button class="tab" [class.active]="activeTab === 'languages'" (click)="setTab('languages')">Languages</button>
+    <button class="tab" [class.active]="activeTab === 'notifications'" (click)="setTab('notifications')">Broadcast</button>
   </div>
 
   <!-- Overview Tab -->
   <div *ngIf="activeTab === 'overview'">
+    <div class="alert alert-warning" *ngIf="overviewWarnings.length > 0" style="margin-bottom:1rem">
+      {{ overviewWarnings.join(' ') }}
+    </div>
+
     <div class="stats-grid">
       <div class="admin-stat-card card">
         <div class="stat-icon-wrap" style="background:var(--accent-subtle);color:var(--accent)">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
         <div>
-          <div class="admin-stat-num">{{ executionStats.totalUsers || '—' }}</div>
+          <div class="admin-stat-num">{{ executionStats.totalUsers ?? '—' }}</div>
           <div class="admin-stat-lbl">Total Users</div>
         </div>
       </div>
@@ -37,7 +41,7 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </div>
         <div>
-          <div class="admin-stat-num">{{ executionStats.totalProjects || '—' }}</div>
+          <div class="admin-stat-num">{{ executionStats.totalProjects ?? '—' }}</div>
           <div class="admin-stat-lbl">Total Projects</div>
         </div>
       </div>
@@ -47,7 +51,7 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
         <div>
-          <div class="admin-stat-num">{{ executionStats.totalExecutions || '—' }}</div>
+          <div class="admin-stat-num">{{ executionStats.totalExecutions ?? '—' }}</div>
           <div class="admin-stat-lbl">Code Executions</div>
         </div>
       </div>
@@ -57,7 +61,7 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         </div>
         <div>
-          <div class="admin-stat-num">{{ executionStats.activeSessions || '—' }}</div>
+          <div class="admin-stat-num">{{ executionStats.activeSessions ?? '—' }}</div>
           <div class="admin-stat-lbl">Active Sessions</div>
         </div>
       </div>
@@ -85,7 +89,7 @@
       <div style="padding:1.25rem 1.25rem 0;display:flex;justify-content:space-between;align-items:center">
         <h3>All Users <span class="badge badge-muted" style="margin-left:0.5rem">{{ users.length }}</span></h3>
       </div>
-      <div *ngIf="users.length === 0" class="empty-state" style="padding:3rem"><div class="empty-icon">👥</div><p>No users found or unable to load.</p></div>
+      <div *ngIf="users.length === 0" class="empty-state" style="padding:3rem"><div class="empty-icon">Users</div><p>No users found or unable to load.</p></div>
       <table class="data-table" *ngIf="users.length > 0">
         <thead>
           <tr>
@@ -169,7 +173,7 @@
           </tr>
         </tbody>
       </table>
-      <div *ngIf="executions.length === 0" class="empty-state"><div class="empty-icon">⚡</div><p>No execution jobs matched the current filters.</p></div>
+      <div *ngIf="executions.length === 0" class="empty-state"><div class="empty-icon">Exec</div><p>No execution jobs matched the current filters.</p></div>
     </div>
   </div>
 
@@ -195,7 +199,7 @@
           </tr>
         </tbody>
       </table>
-      <div *ngIf="languages.length === 0" class="empty-state"><div class="empty-icon">💻</div><p>No languages configured.</p></div>
+      <div *ngIf="languages.length === 0" class="empty-state"><div class="empty-icon">Lang</div><p>No languages configured.</p></div>
     </div>
   </div>
 
@@ -231,7 +235,7 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Add execution language</h3>
-      <button class="btn btn-ghost btn-icon btn-sm" (click)="showLanguageModal = false">×</button>
+      <button class="btn btn-ghost btn-icon btn-sm" (click)="showLanguageModal = false">X</button>
     </div>
     <div class="form-group">
       <label class="form-label">Language key</label>
