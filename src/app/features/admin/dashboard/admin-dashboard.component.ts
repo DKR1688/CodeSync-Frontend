@@ -27,7 +27,13 @@ export class AdminDashboardComponent implements OnInit {
 
   users: User[] = [];
   projects: Project[] = [];
-  executionStats: any = {};
+  executionStats: any = {
+    totalUsers: 0,
+    totalProjects: 0,
+    totalExecutions: 0,
+    activeSessions: 0,
+    byLanguage: {}
+  };
   executions: ExecutionJob[] = [];
   languages: SupportedLanguage[] = [];
   loading: Record<string, boolean> = {};
@@ -57,7 +63,14 @@ export class AdminDashboardComponent implements OnInit {
   broadcastSent = false;
 
   ngOnInit(): void {
-    this.loadOverview();
+    this.auth.ensureProfileLoaded().subscribe(user => {
+      if (!user) {
+        this.loading['overview'] = false;
+        this.syncView();
+        return;
+      }
+      this.loadOverview();
+    });
   }
 
   loadOverview(): void {
@@ -211,6 +224,7 @@ export class AdminDashboardComponent implements OnInit {
 
   setTab(tab: typeof this.activeTab): void {
     this.activeTab = tab;
+    if (tab === 'overview') this.loadOverview();
     if (tab === 'users') this.loadUsers();
     if (tab === 'executions') this.loadExecutions();
     if (tab === 'languages') this.loadLanguages();
