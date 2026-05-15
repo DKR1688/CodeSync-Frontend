@@ -10,7 +10,7 @@ import { CollaborationService } from '../../core/services/collaboration.service'
 import { WebSocketService } from '../../core/services/websocket.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ProjectService } from '../../core/services/project.service';
-import { CodeFile, CollabSession, ExecutionJob, Snapshot, Comment, FileTreeNode } from '../../core/models';
+import { CodeFile, CollabSession, ExecutionJob, Snapshot, Comment, FileTreeNode, SupportedLanguage } from '../../core/models';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
@@ -52,8 +52,10 @@ export class EditorComponent implements OnInit, OnDestroy {
   running = false;
   executionHistory: ExecutionJob[] = [];
   execSub?: Subscription;
-  executionEnabled = environment.executionEnabled;
+  executionEnabled = false;
   executionMessage = '';
+  supportedLanguages: SupportedLanguage[] = [];
+  executionAvailabilityLoaded = false;
 
   // Versions
   snapshots: Snapshot[] = [];
@@ -80,6 +82,7 @@ export class EditorComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.projectId = this.route.snapshot.paramMap.get('id')!;
     this.fileId = this.route.snapshot.paramMap.get('fileId')!;
+    this.loadExecutionAvailability();
     this.loadFile();
     this.loadSidebar();
     this.loadActiveSession();
@@ -91,6 +94,7 @@ export class EditorComponent implements OnInit, OnDestroy {
         this.file = f;
         this.code = f.content || '';
         this.loading = false;
+        this.updateExecutionAvailability();
         this.syncView();
       },
       error: () => {
@@ -343,6 +347,57 @@ export class EditorComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     clearTimeout(this.autoSaveTimer);
     this.execSub?.unsubscribe();
+  }
+
+  private loadExecutionAvailability(): void {
+    this.executionService.getSupportedLanguages().subscribe({
+      next: languages => {
+        this.supportedLanguages = languages.filter(language => language.enabled);
+        this.executionAvailabilityLoaded = true;
+        this.updateExecutionAvailability();
+        this.syncView();
+      },
+      error: () => {
+        this.executionAvailabilityLoaded = true;
+        this.executionEnabled = environment.executionEnabled;
+        this.syncView();
+      }
+    });
+  }
+
+  private updateExecutionAvailability(): void {
+    if (!this.executionAvailabilityLoaded) {
+      return;
+    }
+    if (!this.file?.language) {
+      this.executionEnabled = this.supportedLanguages.length > 0;
+      return;
+    }
+
+    const fileLanguage = this.normalizeLanguageKey(this.file.language);
+    this.executionEnabled = this.supportedLanguages.some(language =>
+      this.normalizeLanguageKey(language.id) === fileLanguage
+    );
+  }
+
+  private normalizeLanguageKey(language: string): string {
+    const normalized = language.trim().toLowerCase();
+    switch (normalized) {
+      case 'py':
+      case 'python3':
+        return 'python';
+      case 'js':
+      case 'node':
+      case 'nodejs':
+        return 'javascript';
+      case 'ts':
+        return 'typescript';
+      case 'c++':
+      case 'cplusplus':
+        return 'cpp';
+      default:
+        return normalized;
+    }
   }
 
   private syncView(): void {
