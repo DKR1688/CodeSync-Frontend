@@ -8,8 +8,10 @@ on:
 jobs:
   sonar:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -18,8 +20,14 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-      - run: npm test -- --watch=false --code-coverage --browsers=ChromeHeadless
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run Jest with coverage
+        run: npm test
 
       - uses: SonarSource/sonarqube-scan-action@v7
         env:

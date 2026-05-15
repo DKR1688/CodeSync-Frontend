@@ -114,7 +114,6 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   loadUsers(): void {
-    if (this.users.length > 0) return;
     this.loading['users'] = true;
     this.http.get<User[]>(`${environment.apiUrl}/auth/users`).subscribe({
       next: (u) => {

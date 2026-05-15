@@ -138,6 +138,21 @@ describe('AuthService', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
   });
 
+  it('clears the previous user immediately when an OAuth token replaces the session', () => {
+    localStorage.setItem('codesync_user', JSON.stringify(profile));
+    service.currentUser$.next(profile);
+    service.isAuthenticated.set(true);
+
+    service.handleOAuthCallback('replacement-token');
+
+    expect(localStorage.getItem('codesync_token')).toBe('replacement-token');
+    expect(localStorage.getItem('codesync_user')).toBeNull();
+    expect(service.currentUser$.value).toBeNull();
+
+    const profileCall = httpMock.expectOne('http://127.0.0.1:8080/auth/profile');
+    profileCall.flush(profile);
+  });
+
   it('returns the cached current user from ensureProfileLoaded', async () => {
     service.isAuthenticated.set(true);
     service.currentUser$.next(profile);

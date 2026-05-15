@@ -59,12 +59,19 @@ export class AuthService {
   }
 
   handleOAuthCallback(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
+    this.beginSession(token);
     this.getProfile().subscribe(() => this.router.navigate(['/dashboard']));
   }
 
   private handleAuthSuccess(res: AuthResponse): void {
-    localStorage.setItem(this.TOKEN_KEY, res.token);
+    this.beginSession(res.token);
+  }
+
+  private beginSession(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.removeItem(this.USER_KEY);
+    this.currentUser$.next(null);
+    this.isAuthenticated.set(true);
   }
 
   private storeUser(user: User): User {
