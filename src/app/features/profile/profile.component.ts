@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -14,6 +14,7 @@ import { environment } from '../../../environments/environment';
   styleUrl: './profile.component.css'
 })
 export class ProfileComponent implements OnInit {
+  cdr = inject(ChangeDetectorRef);
   fb = inject(FormBuilder);
   auth = inject(AuthService);
   http = inject(HttpClient);
@@ -39,8 +40,13 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.auth.currentUser$.subscribe(u => {
-      this.user = u;
-      if (u) this.profileForm.patchValue({ fullName: u.fullName, username: u.username, bio: u.bio });
+      queueMicrotask(() => {
+        this.user = u;
+        if (u) {
+          this.profileForm.patchValue({ fullName: u.fullName, username: u.username, bio: u.bio });
+        }
+        this.cdr.detectChanges();
+      });
     });
     this.auth.getProfile().subscribe();
   }
@@ -55,9 +61,14 @@ export class ProfileComponent implements OnInit {
         this.auth.currentUser$.next(u);
         this.saving = false;
         this.saved = true;
+        this.cdr.detectChanges();
         setTimeout(() => this.saved = false, 2000);
       },
-      error: (err) => { this.error = err?.error?.message || 'Failed to update profile.'; this.saving = false; }
+      error: (err) => {
+        this.error = err?.error?.message || 'Failed to update profile.';
+        this.saving = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -65,8 +76,16 @@ export class ProfileComponent implements OnInit {
     if (this.passwordForm.invalid) return;
     this.pwError = '';
     this.http.put(`${environment.apiUrl}/auth/password`, this.passwordForm.value).subscribe({
-      next: () => { this.pwSaved = true; this.passwordForm.reset(); setTimeout(() => this.pwSaved = false, 3000); },
-      error: (err) => { this.pwError = err?.error?.message || 'Failed to change password.'; }
+      next: () => {
+        this.pwSaved = true;
+        this.passwordForm.reset();
+        this.cdr.detectChanges();
+        setTimeout(() => this.pwSaved = false, 3000);
+      },
+      error: (err) => {
+        this.pwError = err?.error?.message || 'Failed to change password.';
+        this.cdr.detectChanges();
+      }
     });
   }
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Subject, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -10,18 +10,28 @@ export class WebSocketService {
   private notifClient?: Client;
 
   connectCollab(sessionId: string): Observable<any> {
-    const subject = new Subject<any>();
-    this.collabClient = new Client({
-      webSocketFactory: () => new SockJS(`${this.toSockJsHttpUrl(environment.collabWsUrl)}/ws/collab`),
-      onConnect: () => {
-        this.collabClient!.subscribe(`/topic/sessions/${sessionId}`, (msg: IMessage) => {
-          subject.next(JSON.parse(msg.body));
-        });
-      },
-      reconnectDelay: 3000,
+    this.disconnectCollab();
+    return new Observable(observer => {
+      let subscription: StompSubscription | undefined;
+      const client = new Client({
+        webSocketFactory: () => new SockJS(`${this.toSockJsHttpUrl(environment.collabWsUrl)}/ws/collab`),
+        onConnect: () => {
+          subscription = client.subscribe(`/topic/sessions/${sessionId}`, (msg: IMessage) => {
+            observer.next(JSON.parse(msg.body));
+          });
+        },
+        reconnectDelay: 3000,
+      });
+      this.collabClient = client;
+      client.activate();
+      return () => {
+        subscription?.unsubscribe();
+        client.deactivate();
+        if (this.collabClient === client) {
+          this.collabClient = undefined;
+        }
+      };
     });
-    this.collabClient.activate();
-    return subject.asObservable();
   }
 
   sendCollabEvent(destination: string, body: any): void {
@@ -29,46 +39,65 @@ export class WebSocketService {
   }
 
   connectNotifications(userId: string | number): Observable<any> {
-    const subject = new Subject<any>();
-    this.notifClient = new Client({
-      webSocketFactory: () => new SockJS(`${environment.apiUrl}/ws/notifications`),
-      onConnect: () => {
-        this.notifClient!.subscribe(`/topic/notifications/${userId}`, (msg: IMessage) => {
-          subject.next(JSON.parse(msg.body));
-        });
-        this.notifClient!.subscribe(`/topic/notifications/${userId}/unread`, (msg: IMessage) => {
-          const payload = JSON.parse(msg.body);
-          subject.next({ type: 'UNREAD_COUNT', count: payload?.unreadCount ?? payload ?? 0 });
-        });
-      },
-      reconnectDelay: 5000,
+    return new Observable(observer => {
+      const subscriptions: StompSubscription[] = [];
+      const client = new Client({
+        webSocketFactory: () => new SockJS(`${environment.apiUrl}/ws/notifications`),
+        onConnect: () => {
+          subscriptions.push(client.subscribe(`/topic/notifications/${userId}`, (msg: IMessage) => {
+            observer.next(JSON.parse(msg.body));
+          }));
+          subscriptions.push(client.subscribe(`/topic/notifications/${userId}/unread`, (msg: IMessage) => {
+            const payload = JSON.parse(msg.body);
+            observer.next({ type: 'UNREAD_COUNT', count: payload?.unreadCount ?? payload ?? 0 });
+          }));
+        },
+        reconnectDelay: 5000,
+      });
+      this.notifClient = client;
+      client.activate();
+      return () => {
+        subscriptions.forEach(subscription => subscription.unsubscribe());
+        client.deactivate();
+        if (this.notifClient === client) {
+          this.notifClient = undefined;
+        }
+      };
     });
-    this.notifClient.activate();
-    return subject.asObservable();
   }
 
   connectExecution(jobId: string): Observable<any> {
-    const subject = new Subject<any>();
-    const client = new Client({
-      webSocketFactory: () => new SockJS(`${environment.apiUrl}/ws/executions`),
-      onConnect: () => {
-        client.subscribe(`/topic/executions/${jobId}/stdout`, (msg: IMessage) => {
-          const payload = JSON.parse(msg.body);
-          subject.next({ type: 'STDOUT', data: payload?.chunk ?? msg.body });
-        });
-        client.subscribe(`/topic/executions/${jobId}/status`, (msg: IMessage) => {
-          const payload = JSON.parse(msg.body);
-          subject.next({ type: 'STATUS', status: payload?.status ?? msg.body });
-        });
-      },
+    return new Observable(observer => {
+      const subscriptions: StompSubscription[] = [];
+      const client = new Client({
+        webSocketFactory: () => new SockJS(`${environment.apiUrl}/ws/executions`),
+        onConnect: () => {
+          subscriptions.push(client.subscribe(`/topic/executions/${jobId}/stdout`, (msg: IMessage) => {
+            const payload = JSON.parse(msg.body);
+            observer.next({ type: 'STDOUT', data: payload?.chunk ?? msg.body });
+          }));
+          subscriptions.push(client.subscribe(`/topic/executions/${jobId}/status`, (msg: IMessage) => {
+            const payload = JSON.parse(msg.body);
+            observer.next({ type: 'STATUS', status: payload?.status ?? msg.body });
+          }));
+        },
+      });
+      client.activate();
+      return () => {
+        subscriptions.forEach(subscription => subscription.unsubscribe());
+        client.deactivate();
+      };
     });
-    client.activate();
-    return subject.asObservable();
   }
 
   disconnect(): void {
-    this.collabClient?.deactivate();
+    this.disconnectCollab();
     this.notifClient?.deactivate();
+  }
+
+  disconnectCollab(): void {
+    this.collabClient?.deactivate();
+    this.collabClient = undefined;
   }
 
   private toSockJsHttpUrl(url: string): string {

@@ -317,12 +317,16 @@ export class EditorComponent implements OnInit, OnDestroy {
   }
 
   createSession(): void {
+    if (this.creatingSession) {
+      return;
+    }
     this.creatingSession = true;
     this.sessionError = '';
+    const maxParticipants = Math.max(1, Math.min(100, Number(this.sessionForm.maxParticipants) || 10));
     this.collaborationService.createSession({
       projectId: this.projectId,
       fileId: this.fileId,
-      maxParticipants: this.sessionForm.maxParticipants,
+      maxParticipants,
       password: this.sessionForm.password.trim() || undefined
     }).subscribe({
       next: session => {

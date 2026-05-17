@@ -41,6 +41,8 @@ export class CollaborationComponent implements OnInit, OnDestroy {
   };
   cursor = { line: 1, col: 1 };
   joined = false;
+  private lastAppliedRevision = 0;
+  private pendingContent: string | null = null;
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.paramMap.get('id')!;
@@ -53,14 +55,19 @@ export class CollaborationComponent implements OnInit, OnDestroy {
     this.collaborationService.getSession(this.sessionId).subscribe({
       next: (s) => {
         this.session = s;
-        this.code = s.currentContent || '';
+        this.lastAppliedRevision = s.currentRevision ?? this.lastAppliedRevision;
+        if (this.pendingContent === null) {
+          this.code = s.currentContent ?? '';
+        }
         if (s.status !== 'ACTIVE') {
           this.loading = false;
           this.loadParticipants();
           this.syncView();
           return;
         }
-        this.joinSession();
+        if (!this.joined) {
+          this.joinSession();
+        }
         this.syncView();
       },
       error: () => {
@@ -72,12 +79,15 @@ export class CollaborationComponent implements OnInit, OnDestroy {
 
   loadParticipants(): void {
     this.collaborationService.getParticipants(this.sessionId).subscribe(participants => {
-      this.participants = participants;
+      this.participants = participants.filter(participant => participant.active !== false && !participant.leftAt);
       this.syncView();
     });
   }
 
   joinSession(): void {
+    if (this.joined || this.joinLoading) {
+      return;
+    }
     this.joinLoading = true;
     this.joinError = '';
     this.collaborationService.joinSession(this.sessionId, {
@@ -103,12 +113,12 @@ export class CollaborationComponent implements OnInit, OnDestroy {
   }
 
   connectWs(): void {
+    this.wsSub?.unsubscribe();
     this.wsSub = this.wsService.connectCollab(this.sessionId).subscribe(event => {
       this.connected = true;
       switch (event.type) {
         case 'CONTENT_SYNC':
-          this.session = event.payload;
-          this.code = event.payload?.currentContent || '';
+          this.applyContentSync(event.payload);
           break;
         case 'PARTICIPANT_JOINED':
         case 'PARTICIPANT_LEFT':
@@ -129,19 +139,24 @@ export class CollaborationComponent implements OnInit, OnDestroy {
     }
 
     clearTimeout(this.syncTimer);
+    this.pendingContent = this.code;
     this.syncTimer = setTimeout(() => {
       this.collaborationService.broadcastChange(this.sessionId, {
         content: this.code,
-        baseRevision: this.session?.currentRevision || 0,
+        baseRevision: this.session?.currentRevision ?? this.lastAppliedRevision,
         cursorLine: this.cursor.line,
         cursorCol: this.cursor.col
       }).subscribe({
         next: session => {
           this.session = session;
+          this.lastAppliedRevision = session.currentRevision ?? this.lastAppliedRevision;
+          if (session.currentContent === this.pendingContent) {
+            this.pendingContent = null;
+          }
           this.syncView();
         },
-        error: () => {
-          this.loadSession();
+        error: err => {
+          this.joinError = err?.error?.message || 'Unable to sync your latest change. Please try again.';
           this.syncView();
         }
       });
@@ -187,6 +202,7 @@ export class CollaborationComponent implements OnInit, OnDestroy {
       return;
     }
     this.collaborationService.leaveSession(this.sessionId).subscribe();
+    this.joined = false;
   }
 
   isHost(): boolean {
@@ -202,6 +218,26 @@ export class CollaborationComponent implements OnInit, OnDestroy {
     clearTimeout(this.syncTimer);
     this.leaveSession();
     this.wsSub?.unsubscribe();
+    this.wsService.disconnectCollab();
+  }
+
+  private applyContentSync(session?: CollabSession): void {
+    if (!session) {
+      return;
+    }
+
+    const incomingRevision = session.currentRevision ?? this.lastAppliedRevision;
+    if (incomingRevision < this.lastAppliedRevision) {
+      return;
+    }
+
+    this.session = session;
+    this.lastAppliedRevision = incomingRevision;
+    const incomingContent = session.currentContent ?? this.code;
+    if (this.pendingContent === null || incomingContent === this.pendingContent) {
+      this.code = incomingContent;
+      this.pendingContent = null;
+    }
   }
 
   private syncView(): void {
