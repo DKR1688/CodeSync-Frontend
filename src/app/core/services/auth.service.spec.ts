@@ -3,10 +3,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { AuthResponse, User } from '../models';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
+  const authBaseUrl = `${environment.authUrl}/auth`;
   const loginRequest = { email: 'deepak@codesync.dev', password: 'secret123' };
   const registerRequest = {
     username: 'deepak',
@@ -58,12 +60,12 @@ describe('AuthService', () => {
   it('logs in, stores the token, and then loads the profile', async () => {
     const result = firstValueFrom(service.login(loginRequest));
 
-    const loginCall = httpMock.expectOne('http://127.0.0.1:8080/auth/login');
+    const loginCall = httpMock.expectOne(`${authBaseUrl}/login`);
     expect(loginCall.request.method).toBe('POST');
     expect(loginCall.request.body).toEqual(loginRequest);
     loginCall.flush(authResponse);
 
-    const profileCall = httpMock.expectOne('http://127.0.0.1:8080/auth/profile');
+    const profileCall = httpMock.expectOne(`${authBaseUrl}/profile`);
     expect(profileCall.request.method).toBe('GET');
     profileCall.flush(profile);
 
@@ -76,12 +78,12 @@ describe('AuthService', () => {
   it('registers, auto logs in, and stores the user', async () => {
     const result = firstValueFrom(service.register(registerRequest));
 
-    const registerCall = httpMock.expectOne('http://127.0.0.1:8080/auth/register');
+    const registerCall = httpMock.expectOne(`${authBaseUrl}/register`);
     expect(registerCall.request.method).toBe('POST');
     expect(registerCall.request.body).toEqual(registerRequest);
     registerCall.flush(profile);
 
-    const loginCall = httpMock.expectOne('http://127.0.0.1:8080/auth/login');
+    const loginCall = httpMock.expectOne(`${authBaseUrl}/login`);
     expect(loginCall.request.body).toEqual({
       email: registerRequest.email,
       password: registerRequest.password,
@@ -101,7 +103,7 @@ describe('AuthService', () => {
 
     service.logout();
 
-    const logoutCall = httpMock.expectOne('http://127.0.0.1:8080/auth/logout');
+    const logoutCall = httpMock.expectOne(`${authBaseUrl}/logout`);
     expect(logoutCall.request.method).toBe('POST');
     logoutCall.flush({});
 
@@ -116,12 +118,12 @@ describe('AuthService', () => {
     service.getUserProfile(3).subscribe();
     service.searchUsers('deep').subscribe();
 
-    const profileCall = httpMock.expectOne('http://127.0.0.1:8080/auth/profile/3');
+    const profileCall = httpMock.expectOne(`${authBaseUrl}/profile/3`);
     expect(profileCall.request.method).toBe('GET');
     profileCall.flush(profile);
 
     const searchCall = httpMock.expectOne(req =>
-      req.url === 'http://127.0.0.1:8080/auth/search' && req.params.get('username') === 'deep'
+      req.url === `${authBaseUrl}/search` && req.params.get('username') === 'deep'
     );
     expect(searchCall.request.method).toBe('GET');
     searchCall.flush([profile]);
@@ -130,7 +132,7 @@ describe('AuthService', () => {
   it('stores the OAuth token and redirects after loading the profile', () => {
     service.handleOAuthCallback('oauth-token');
 
-    const profileCall = httpMock.expectOne('http://127.0.0.1:8080/auth/profile');
+    const profileCall = httpMock.expectOne(`${authBaseUrl}/profile`);
     profileCall.flush(profile);
 
     expect(localStorage.getItem('codesync_token')).toBe('oauth-token');
@@ -149,7 +151,7 @@ describe('AuthService', () => {
     expect(localStorage.getItem('codesync_user')).toBeNull();
     expect(service.currentUser$.value).toBeNull();
 
-    const profileCall = httpMock.expectOne('http://127.0.0.1:8080/auth/profile');
+    const profileCall = httpMock.expectOne(`${authBaseUrl}/profile`);
     profileCall.flush(profile);
   });
 
@@ -158,7 +160,7 @@ describe('AuthService', () => {
     service.currentUser$.next(profile);
 
     await expect(firstValueFrom(service.ensureProfileLoaded())).resolves.toEqual(profile);
-    httpMock.expectNone('http://127.0.0.1:8080/auth/profile');
+    httpMock.expectNone(`${authBaseUrl}/profile`);
   });
 
   it('clears the session when profile loading fails', async () => {
@@ -167,7 +169,7 @@ describe('AuthService', () => {
 
     const result = firstValueFrom(service.ensureProfileLoaded());
 
-    const profileCall = httpMock.expectOne('http://127.0.0.1:8080/auth/profile');
+    const profileCall = httpMock.expectOne(`${authBaseUrl}/profile`);
     profileCall.flush({ message: 'error' }, { status: 500, statusText: 'Server Error' });
 
     await expect(result).resolves.toBeNull();

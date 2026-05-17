@@ -75,6 +75,24 @@ export class RegisterComponent {
   }
 
   private buildOAuthUrl(provider: 'github' | 'google'): string {
-    return `${environment.authUrl}/oauth2/authorization/${provider}`;
+    const origin = this.getOAuthFrontendOrigin();
+    const query = origin
+      ? `?frontendOrigin=${encodeURIComponent(origin)}`
+      : '';
+
+    return `${environment.authUrl}/auth/oauth2/${provider}${query}`;
+  }
+
+  private getOAuthFrontendOrigin(): string {
+    if (typeof window === 'undefined' || !window.location?.origin) {
+      return '';
+    }
+
+    const { hostname, origin, port, protocol } = window.location;
+    if (hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
+      return `${protocol}//localhost${port ? `:${port}` : ''}`;
+    }
+
+    return origin;
   }
 }

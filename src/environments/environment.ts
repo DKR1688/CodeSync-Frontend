@@ -20,21 +20,37 @@ const PROD_EXECUTION_ENABLED = false;
 const runtimeEnv =
     typeof window !== 'undefined' ? window.__env : undefined;
 
-const browserOrigin =
-    typeof window !== 'undefined' && window.location?.origin
-        ? window.location.origin
-        : '';
+const browserLocation =
+    typeof window !== 'undefined' ? window.location : undefined;
+
+const browserOrigin = browserLocation?.origin ?? '';
+const browserProtocol = browserLocation?.protocol ?? 'http:';
+const browserHostname = browserLocation?.hostname ?? '';
+
+const isPrivateIpv4Hostname =
+    /^(10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})$/i.test(
+        browserHostname
+    );
+
+const isLoopbackHostname =
+    /^(localhost|127(?:\.\d{1,3}){3}|::1)$/i.test(browserHostname);
 
 const isLocalBrowser =
-    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(browserOrigin);
+    /^https?:$/i.test(browserProtocol) &&
+    (isLoopbackHostname || isPrivateIpv4Hostname);
+
+const localApiUrl =
+    browserHostname
+        ? `${browserProtocol}//${browserHostname}:8080`
+        : LOCAL_API_URL;
 
 const apiUrl =
     runtimeEnv?.apiUrl?.trim() ||
-    (isLocalBrowser ? LOCAL_API_URL : PROD_API_URL);
+    (isLocalBrowser ? localApiUrl : PROD_API_URL);
 
 const authUrl =
     runtimeEnv?.authUrl?.trim() ||
-    (isLocalBrowser ? LOCAL_API_URL : PROD_AUTH_URL);
+    (isLocalBrowser ? localApiUrl : PROD_AUTH_URL);
 
 const collabWsUrl =
     runtimeEnv?.collabWsUrl?.trim() ||

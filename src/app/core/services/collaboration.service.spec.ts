@@ -2,9 +2,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { CollaborationService } from './collaboration.service';
 
 describe('CollaborationService', () => {
+  const collaborationBaseUrl = `${environment.apiUrl}/api/v1/sessions`;
   let service: CollaborationService;
   let httpMock: HttpTestingController;
 
@@ -24,7 +26,7 @@ describe('CollaborationService', () => {
   it('joins sessions with an empty body by default', () => {
     service.joinSession('session-1').subscribe();
 
-    const request = httpMock.expectOne('http://127.0.0.1:8080/api/v1/sessions/session-1/join');
+    const request = httpMock.expectOne(`${collaborationBaseUrl}/session-1/join`);
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({});
     request.flush({});
@@ -35,7 +37,7 @@ describe('CollaborationService', () => {
 
     service.broadcastChange('session-2', payload).subscribe();
 
-    const request = httpMock.expectOne('http://127.0.0.1:8080/api/v1/sessions/session-2/content');
+    const request = httpMock.expectOne(`${collaborationBaseUrl}/session-2/content`);
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual(payload);
     request.flush({});
@@ -45,7 +47,7 @@ describe('CollaborationService', () => {
     jest.useFakeTimers();
 
     const result = firstValueFrom(service.createSession({ projectId: 6, fileId: 2 }));
-    httpMock.expectOne('http://127.0.0.1:8080/api/v1/sessions');
+    httpMock.expectOne(collaborationBaseUrl);
 
     jest.advanceTimersByTime(15001);
 

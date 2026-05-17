@@ -49,14 +49,17 @@ export class DashboardComponent implements OnInit {
     this.loading = true;
     forkJoin({
       myProjects: this.projectService.getMyProjects().pipe(catchError(() => of([]))),
+      memberProjects: this.projectService.getMemberProjects().pipe(catchError(() => of([]))),
       notifications: this.notifService.getNotifications().pipe(catchError(() => of([])))
     }).subscribe({
-      next: ({ myProjects, notifications }) => {
+      next: ({ myProjects, memberProjects, notifications }) => {
         this.myProjects = myProjects.slice(0, 6);
+        this.memberProjects = memberProjects.slice(0, 6);
         this.recentNotifications = notifications.slice(0, 5);
-        this.stats.projects = myProjects.length;
+        const accessibleProjects = [...myProjects, ...memberProjects];
+        this.stats.projects = new Set(accessibleProjects.map(project => String(project.projectId))).size;
         this.stats.unread = notifications.filter(n => !n.isRead).length;
-        this.collaboratorCount = this.myProjects.reduce((total, project) => total + project.memberUserIds.length, 0);
+        this.collaboratorCount = this.getCollaboratorCount(accessibleProjects);
         this.loading = false;
         this.syncView();
       },
@@ -104,6 +107,24 @@ export class DashboardComponent implements OnInit {
     };
     return icons[type] || '🔔';
   }
+  private getCollaboratorCount(projects: Project[]): number {
+    const currentUserId = this.user?.userId == null ? null : String(this.user.userId);
+    const collaboratorIds = new Set<string>();
+
+    for (const project of projects) {
+      collaboratorIds.add(String(project.ownerId));
+      for (const memberId of project.memberUserIds ?? []) {
+        collaboratorIds.add(String(memberId));
+      }
+    }
+
+    if (currentUserId != null) {
+      collaboratorIds.delete(currentUserId);
+    }
+
+    return collaboratorIds.size;
+  }
+
   private syncView(): void {
     this.cdr.detectChanges();
   }

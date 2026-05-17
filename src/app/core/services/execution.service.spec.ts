@@ -2,9 +2,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { ExecutionService } from './execution.service';
 
 describe('ExecutionService', () => {
+  const executionBaseUrl = `${environment.apiUrl}/api/v1/executions`;
   let service: ExecutionService;
   let httpMock: HttpTestingController;
 
@@ -24,7 +26,7 @@ describe('ExecutionService', () => {
   it('maps supported languages into the frontend model', async () => {
     const result = firstValueFrom(service.getSupportedLanguages());
 
-    const request = httpMock.expectOne('http://127.0.0.1:8080/api/v1/executions/languages');
+    const request = httpMock.expectOne(`${executionBaseUrl}/languages`);
     request.flush([
       {
         language: 'java',
@@ -52,7 +54,7 @@ describe('ExecutionService', () => {
   it('includes disabled languages when requested', () => {
     service.getSupportedLanguages(true).subscribe();
 
-    const request = httpMock.expectOne('http://127.0.0.1:8080/api/v1/executions/languages?includeDisabled=true');
+    const request = httpMock.expectOne(`${executionBaseUrl}/languages?includeDisabled=true`);
     expect(request.request.method).toBe('GET');
     request.flush([]);
   });
@@ -66,7 +68,7 @@ describe('ExecutionService', () => {
     }).subscribe();
 
     const request = httpMock.expectOne(
-      'http://127.0.0.1:8080/api/v1/executions/admin/jobs?status=FAILED&language=java&from=2026-05-01&to=2026-05-05'
+      `${executionBaseUrl}/admin/jobs?status=FAILED&language=java&from=2026-05-01&to=2026-05-05`
     );
     expect(request.request.method).toBe('GET');
     request.flush([]);
@@ -76,7 +78,7 @@ describe('ExecutionService', () => {
     service.setLanguageEnabled('java', false).subscribe();
 
     const request = httpMock.expectOne(
-      'http://127.0.0.1:8080/api/v1/executions/languages/java/enabled?enabled=false'
+      `${executionBaseUrl}/languages/java/enabled?enabled=false`
     );
     expect(request.request.method).toBe('PATCH');
     request.flush({});

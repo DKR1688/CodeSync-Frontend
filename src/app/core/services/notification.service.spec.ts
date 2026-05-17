@@ -2,10 +2,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
+  const notificationBaseUrl = `${environment.apiUrl}/api/v1/notifications`;
   let service: NotificationService;
   let httpMock: HttpTestingController;
   let authService: { getCurrentUserId: jest.Mock };
@@ -40,7 +42,7 @@ describe('NotificationService', () => {
   it('loads the unread count and updates the state', async () => {
     const result = firstValueFrom(service.getUnreadCount());
 
-    const request = httpMock.expectOne('http://127.0.0.1:8080/api/v1/notifications/recipient/9/unread-count');
+    const request = httpMock.expectOne(`${notificationBaseUrl}/recipient/9/unread-count`);
     request.flush({ recipientId: 9, unreadCount: 5 });
 
     await expect(result).resolves.toBe(5);
@@ -52,7 +54,7 @@ describe('NotificationService', () => {
 
     const result = firstValueFrom(service.markRead(12));
 
-    const request = httpMock.expectOne('http://127.0.0.1:8080/api/v1/notifications/12/read');
+    const request = httpMock.expectOne(`${notificationBaseUrl}/12/read`);
     expect(request.request.method).toBe('PUT');
     request.flush(null);
 
@@ -65,7 +67,7 @@ describe('NotificationService', () => {
 
     const result = firstValueFrom(service.markAllRead());
 
-    const request = httpMock.expectOne('http://127.0.0.1:8080/api/v1/notifications/recipient/9/read-all');
+    const request = httpMock.expectOne(`${notificationBaseUrl}/recipient/9/read-all`);
     expect(request.request.method).toBe('PUT');
     request.flush(null);
 

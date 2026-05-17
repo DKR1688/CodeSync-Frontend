@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -17,6 +17,8 @@ export class ProjectListComponent implements OnInit {
   cdr = inject(ChangeDetectorRef);
   projectService = inject(ProjectService);
   auth = inject(AuthService);
+  route = inject(ActivatedRoute);
+  router = inject(Router);
 
   projects: Project[] = [];
   filtered: Project[] = [];
@@ -24,6 +26,7 @@ export class ProjectListComponent implements OnInit {
   search = '';
   selectedLang = '';
   activeTab: 'my' | 'member' | 'public' = 'my';
+  private hasInitializedTab = false;
 
   LANGS: Record<string, string> = {
     python: '#3572a5', javascript: '#f1e05a', typescript: '#3178c6',
@@ -35,8 +38,25 @@ export class ProjectListComponent implements OnInit {
 
   ngOnInit(): void {
     const isAuth = this.auth.isAuthenticated();
-    this.activeTab = isAuth ? 'my' : 'public';
-    this.loadProjects();
+    const subscribeToTabs = () => {
+      this.route.queryParamMap.subscribe(params => {
+        const nextTab = this.resolveActiveTab(params.get('tab'), isAuth);
+        if (!this.hasInitializedTab || nextTab !== this.activeTab) {
+          this.activeTab = nextTab;
+          this.selectedLang = '';
+          this.search = '';
+          this.hasInitializedTab = true;
+          this.loadProjects();
+        }
+      });
+    };
+
+    if (!isAuth) {
+      subscribeToTabs();
+      return;
+    }
+
+    this.auth.ensureProfileLoaded().subscribe(() => subscribeToTabs());
   }
 
   loadProjects(): void {
@@ -63,10 +83,11 @@ export class ProjectListComponent implements OnInit {
   }
 
   setTab(tab: 'my' | 'member' | 'public'): void {
-    this.activeTab = tab;
-    this.selectedLang = '';
-    this.search = '';
-    this.loadProjects();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge',
+    });
   }
 
   applyFilter(): void {
@@ -97,6 +118,14 @@ export class ProjectListComponent implements OnInit {
       this.applyFilter();
       this.syncView();
     });
+  }
+
+  private resolveActiveTab(requestedTab: string | null, isAuthenticated: boolean): 'my' | 'member' | 'public' {
+    if (requestedTab === 'my' || requestedTab === 'member' || requestedTab === 'public') {
+      return requestedTab;
+    }
+
+    return isAuthenticated ? 'my' : 'public';
   }
 
   private syncView(): void {

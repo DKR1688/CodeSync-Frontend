@@ -1,8 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { DiffResult, EntityId, Snapshot } from '../models';
 import { environment } from '../../../environments/environment';
+
+interface VersionDiffResponse {
+  lines?: Array<{
+    operation: 'ADD' | 'REMOVE' | 'EQUAL';
+    oldLineNumber?: number | null;
+    newLineNumber?: number | null;
+    content: string;
+  }>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class VersionService {
@@ -31,7 +40,17 @@ export class VersionService {
   }
 
   diffSnapshots(id1: EntityId, id2: EntityId): Observable<DiffResult> {
-    return this.http.get<DiffResult>(`${this.baseUrl}/diff?fromSnapshotId=${id1}&toSnapshotId=${id2}`);
+    return this.http
+      .get<VersionDiffResponse>(`${this.baseUrl}/diff?fromSnapshotId=${id1}&toSnapshotId=${id2}`)
+      .pipe(
+        map(response => ({
+          lines: (response.lines ?? []).map(line => ({
+            lineNumber: line.newLineNumber ?? line.oldLineNumber ?? 0,
+            content: line.content,
+            type: this.mapDiffOperation(line.operation)
+          }))
+        }))
+      );
   }
 
   createBranch(sourceSnapshotId: EntityId, name: string, message?: string): Observable<Snapshot> {
@@ -44,5 +63,16 @@ export class VersionService {
 
   tagSnapshot(snapshotId: EntityId, tag: string): Observable<Snapshot> {
     return this.http.post<Snapshot>(`${this.baseUrl}/${snapshotId}/tag`, { tag });
+  }
+
+  private mapDiffOperation(operation: 'ADD' | 'REMOVE' | 'EQUAL'): 'ADDED' | 'REMOVED' | 'UNCHANGED' {
+    switch (operation) {
+      case 'ADD':
+        return 'ADDED';
+      case 'REMOVE':
+        return 'REMOVED';
+      default:
+        return 'UNCHANGED';
+    }
   }
 }

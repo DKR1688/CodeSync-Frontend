@@ -74,7 +74,8 @@
       <div *ngIf="!loading && myProjects.length === 0" class="empty-state" style="padding:2.5rem">
         <div class="empty-icon">📁</div>
         <h3>No projects yet</h3>
-        <p>Create your first project and start coding!</p>
+        <p *ngIf="memberProjects.length === 0">Create your first project and start coding!</p>
+        <p *ngIf="memberProjects.length > 0">You have not created a project yet, but shared projects are ready below.</p>
         <a routerLink="/projects/new" class="btn btn-primary btn-sm" style="margin-top:0.5rem">Create project</a>
       </div>
 
@@ -106,6 +107,37 @@
           </div>
           <div class="project-date">Updated {{ getTimeAgo(p.updatedAt) }}</div>
         </a>
+      </div>
+
+      <div *ngIf="!loading && memberProjects.length > 0" style="margin-top:1.5rem">
+        <div class="section-top">
+          <h3>Shared With Me</h3>
+          <a [routerLink]="['/projects']" [queryParams]="{ tab: 'member' }" class="btn btn-ghost btn-sm">View all â†’</a>
+        </div>
+
+        <div class="projects-grid">
+          <a *ngFor="let p of memberProjects" [routerLink]="['/projects', p.projectId]" class="project-card card-hover card">
+            <div class="project-top">
+              <div class="project-icon">
+                <span [style.background]="getLangColor(p.language)"></span>
+              </div>
+              <span class="badge badge-accent">Shared</span>
+            </div>
+            <h4 class="project-name">{{ p.name }}</h4>
+            <p class="project-desc">{{ p.description || 'No description provided.' }}</p>
+            <div class="project-meta">
+              <span class="lang-chip">
+                <span class="lang-dot" [style.background]="getLangColor(p.language)"></span>
+                {{ p.language || 'Unknown' }}
+              </span>
+              <div class="project-stats">
+                <span>â­ {{ p.starCount }}</span>
+                <span>ðŸ”€ {{ p.forkCount }}</span>
+              </div>
+            </div>
+            <div class="project-date">Updated {{ getTimeAgo(p.updatedAt) }}</div>
+          </a>
+        </div>
       </div>
     </div>
 

@@ -67,6 +67,8 @@ export class EditorComponent implements OnInit, OnDestroy {
   comments: Comment[] = [];
   newComment = { lineNumber: 1, content: '' };
   showCommentModal = false;
+  addingComment = false;
+  commentError = '';
   activeSession: CollabSession | null = null;
   loadingSession = false;
   showSessionModal = false;
@@ -109,9 +111,15 @@ export class EditorComponent implements OnInit, OnDestroy {
       this.fileTree = t;
       this.syncView();
     });
-    this.commentService.getByFile(this.fileId).subscribe(c => {
-      this.comments = c;
-      this.syncView();
+    this.commentService.getByFile(this.fileId, this.projectId).subscribe({
+      next: c => {
+        this.comments = c;
+        this.syncView();
+      },
+      error: () => {
+        this.comments = [];
+        this.syncView();
+      }
     });
   }
 
@@ -266,17 +274,36 @@ export class EditorComponent implements OnInit, OnDestroy {
   }
 
   addComment(): void {
-    if (!this.newComment.content.trim()) return;
+    const content = this.newComment.content.trim();
+    const lineNumber = Number(this.newComment.lineNumber);
+    if (!content || this.addingComment) return;
+    if (!Number.isInteger(lineNumber) || lineNumber <= 0) {
+      this.commentError = 'Enter a valid line number greater than 0.';
+      this.syncView();
+      return;
+    }
+
+    this.addingComment = true;
+    this.commentError = '';
     this.commentService.addComment({
       projectId: this.projectId,
       fileId: this.fileId,
-      lineNumber: this.newComment.lineNumber,
-      content: this.newComment.content
-    }).subscribe(c => {
-      this.comments.unshift(c);
-      this.showCommentModal = false;
-      this.newComment = { lineNumber: 1, content: '' };
-      this.syncView();
+      lineNumber,
+      content
+    }).subscribe({
+      next: c => {
+        this.comments.unshift(c);
+        this.showCommentModal = false;
+        this.newComment = { lineNumber: 1, content: '' };
+        this.addingComment = false;
+        this.commentError = '';
+        this.syncView();
+      },
+      error: err => {
+        this.addingComment = false;
+        this.commentError = err?.error?.message || 'Unable to add the comment right now.';
+        this.syncView();
+      }
     });
   }
 

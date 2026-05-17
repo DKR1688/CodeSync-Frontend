@@ -1,8 +1,18 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Comment, EntityId } from '../models';
 import { environment } from '../../../environments/environment';
+
+export interface AddCommentPayload {
+  projectId: EntityId;
+  fileId: EntityId;
+  content: string;
+  lineNumber?: number;
+  columnNumber?: number;
+  parentCommentId?: EntityId;
+  snapshotId?: EntityId;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CommentService {
@@ -10,12 +20,15 @@ export class CommentService {
 
   constructor(private http: HttpClient) {}
 
-  addComment(data: Partial<Comment>): Observable<Comment> {
+  addComment(data: AddCommentPayload): Observable<Comment> {
     return this.http.post<Comment>(this.baseUrl, data);
   }
 
-  getByFile(fileId: EntityId): Observable<Comment[]> {
-    return this.http.get<Comment[]>(`${this.baseUrl}/file/${fileId}`);
+  getByFile(fileId: EntityId, projectId?: EntityId): Observable<Comment[]> {
+    const params = projectId === undefined
+      ? undefined
+      : new HttpParams().set('projectId', String(projectId));
+    return this.http.get<Comment[]>(`${this.baseUrl}/file/${fileId}`, { params });
   }
 
   getByProject(projectId: EntityId): Observable<Comment[]> {

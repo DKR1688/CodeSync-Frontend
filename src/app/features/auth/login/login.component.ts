@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { finalize } from 'rxjs';
 
@@ -18,6 +18,7 @@ export class LoginComponent {
   fb = inject(FormBuilder);
   auth = inject(AuthService);
   router = inject(Router);
+  route = inject(ActivatedRoute);
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -31,6 +32,13 @@ export class LoginComponent {
   authUrl = environment.authUrl;
   githubOAuthUrl = this.buildOAuthUrl('github');
   googleOAuthUrl = this.buildOAuthUrl('google');
+
+  constructor() {
+    const oauthError = this.route.snapshot.queryParamMap.get('oauthError');
+    if (oauthError === 'true') {
+      this.error = 'OAuth sign-in failed. Please try again and confirm the Google redirect URI is configured correctly.';
+    }
+  }
 
   submit(): void {
     if (this.form.invalid || this.loading) return;
@@ -57,6 +65,25 @@ export class LoginComponent {
   }
 
   private buildOAuthUrl(provider: 'github' | 'google'): string {
-    return `${environment.authUrl}/oauth2/authorization/${provider}`;
+    const origin = this.getOAuthFrontendOrigin();
+
+    const query = origin
+      ? `?frontendOrigin=${encodeURIComponent(origin)}`
+      : '';
+
+    return `${environment.authUrl}/auth/oauth2/${provider}${query}`;
+  }
+
+  private getOAuthFrontendOrigin(): string {
+    if (typeof window === 'undefined' || !window.location?.origin) {
+      return '';
+    }
+
+    const { hostname, origin, port, protocol } = window.location;
+    if (hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
+      return `${protocol}//localhost${port ? `:${port}` : ''}`;
+    }
+
+    return origin;
   }
 }

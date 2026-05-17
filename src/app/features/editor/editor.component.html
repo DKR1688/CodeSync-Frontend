@@ -141,7 +141,7 @@
       <!-- Comments Panel -->
       <div class="panel-content" *ngIf="activePanel === 'comments'">
         <div class="comments-toolbar">
-          <button class="btn btn-primary btn-sm" (click)="showCommentModal = true">Add Comment</button>
+          <button class="btn btn-primary btn-sm" (click)="showCommentModal = true; commentError = ''">Add Comment</button>
         </div>
         <div *ngIf="comments.length === 0" class="output-empty"><p>No comments yet. Add the first one!</p></div>
         <div class="comment-list" *ngIf="comments.length > 0">
@@ -232,7 +232,7 @@
 </div>
 
 <!-- Comment Modal -->
-<div class="modal-overlay" *ngIf="showCommentModal" (click)="showCommentModal = false">
+<div class="modal-overlay" *ngIf="showCommentModal" (click)="showCommentModal = false; commentError = ''">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Add Comment</h3>
@@ -248,9 +248,13 @@
         <textarea [(ngModel)]="newComment.content" class="form-textarea" placeholder="Describe the issue or suggestion..." rows="3"></textarea>
       </div>
     </div>
+    <div class="alert alert-danger" *ngIf="commentError" style="margin-top:1rem">{{ commentError }}</div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="showCommentModal = false">Cancel</button>
-      <button class="btn btn-primary" (click)="addComment()" [disabled]="!newComment.content.trim()">Add Comment</button>
+      <button class="btn btn-secondary" (click)="showCommentModal = false; commentError = ''">Cancel</button>
+      <button class="btn btn-primary" (click)="addComment()" [disabled]="!newComment.content.trim() || addingComment">
+        <span class="spinner" *ngIf="addingComment" style="width:16px;height:16px;border-width:2px"></span>
+        Add Comment
+      </button>
     </div>
   </div>
 </div>
